@@ -30,7 +30,28 @@ export interface User {
   updatedAt: string
 }
 
-export interface LoginResponseData {
+export interface LoginResponseDataStandard {
+  user: User
+  token: string
+}
+
+export interface LoginResponseData2FaRequired {
+  requiresTwoFactor: true
+  preAuthToken: string
+  user: Pick<User, "id" | "email" | "name">
+  message?: string
+}
+
+export type LoginResponseData =
+  | LoginResponseDataStandard
+  | LoginResponseData2FaRequired
+
+export interface TwoFaVerifyLoginPayload {
+  preAuthToken: string
+  code: string
+}
+
+export interface TwoFaVerifyLoginResponseData {
   user: User
   token: string
 }

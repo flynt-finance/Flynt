@@ -1,16 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Modal from "@/components/modal/Modal";
 import { loginSchema } from "@/lib/validations/auth";
-import { loginRequest } from "@/lib/api/requests";
+import { loginRequest, twoFaVerifyLoginRequest } from "@/lib/api/requests";
 import { setToken } from "@/lib/auth-cookie";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { showErrorToast } from "@/lib/api/client";
+import type {
+	LoginResponseData,
+	LoginResponseData2FaRequired,
+} from "@/lib/api/types";
+
+const OTP_LENGTH = 6;
+
+function isLogin2FaRequired(
+	data: LoginResponseData
+): data is LoginResponseData2FaRequired {
+	return "requiresTwoFactor" in data && data.requiresTwoFactor === true;
+}
 
 const MailIcon = () => (
 	<svg
@@ -126,10 +140,107 @@ export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [isLoading, setIsLoading] = useState(false);
+	const [twoFaModalOpen, setTwoFaModalOpen] = useState(false);
+	const [preAuthToken, setPreAuthToken] = useState<string | null>(null);
+	const [twoFaOtp, setTwoFaOtp] = useState<string[]>(
+		Array(OTP_LENGTH).fill("")
+	);
+	const [isVerifying, setIsVerifying] = useState(false);
+	const twoFaInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const handleTogglePassword = () => {
 		setShowPassword((prev) => !prev);
 	};
+
+	const handleTwoFaOtpChange = useCallback((index: number, value: string) => {
+		if (value.length > 1) {
+			const digits = value.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
+			setTwoFaOtp((prev) => {
+				const next = [...prev];
+				digits.forEach((d, i) => {
+					if (index + i < OTP_LENGTH) next[index + i] = d;
+				});
+				return next;
+			});
+			const nextFocus = Math.min(index + digits.length, OTP_LENGTH - 1);
+			twoFaInputRefs.current[nextFocus]?.focus();
+			return;
+		}
+		const digit = value.replace(/\D/g, "").slice(-1);
+		setTwoFaOtp((prev) => {
+			const next = [...prev];
+			next[index] = digit;
+			return next;
+		});
+		if (digit && index < OTP_LENGTH - 1) {
+			twoFaInputRefs.current[index + 1]?.focus();
+		}
+	}, []);
+
+	const handleTwoFaKeyDown = useCallback(
+		(index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Backspace" && !twoFaOtp[index] && index > 0) {
+				twoFaInputRefs.current[index - 1]?.focus();
+				setTwoFaOtp((prev) => {
+					const next = [...prev];
+					next[index - 1] = "";
+					return next;
+				});
+			}
+		},
+		[twoFaOtp]
+	);
+
+	const handleTwoFaPaste = useCallback((e: React.ClipboardEvent) => {
+		e.preventDefault();
+		const pasted = e.clipboardData
+			.getData("text")
+			.replace(/\D/g, "")
+			.slice(0, OTP_LENGTH);
+		if (!pasted) return;
+		const digits = pasted.split("");
+		setTwoFaOtp((prev) => {
+			const next = [...prev];
+			digits.forEach((d, i) => {
+				next[i] = d;
+			});
+			return next;
+		});
+		const nextFocus = Math.min(digits.length, OTP_LENGTH - 1);
+		twoFaInputRefs.current[nextFocus]?.focus();
+	}, []);
+
+	const handleVerify2Fa = useCallback(async () => {
+		if (!preAuthToken) return;
+		const code = twoFaOtp.join("");
+		if (code.length !== OTP_LENGTH) return;
+		setIsVerifying(true);
+		try {
+			const response = await twoFaVerifyLoginRequest({ preAuthToken, code });
+			if (response.success && response.data) {
+				setToken(response.data.token);
+				setData({ user: response.data.user });
+				toast.success("Two-factor authentication successful", {
+					description: "You have been signed in.",
+				});
+				setTwoFaModalOpen(false);
+				setPreAuthToken(null);
+				setTwoFaOtp(Array(OTP_LENGTH).fill(""));
+				router.push("/dashboard");
+			}
+		} catch {
+			// Error toast handled by client
+		} finally {
+			setIsVerifying(false);
+		}
+	}, [preAuthToken, twoFaOtp, setData, router]);
+
+	const handleTwoFaModalClose = useCallback(() => {
+		if (isVerifying) return;
+		setTwoFaModalOpen(false);
+		setPreAuthToken(null);
+		setTwoFaOtp(Array(OTP_LENGTH).fill(""));
+	}, [isVerifying]);
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -153,9 +264,14 @@ export default function LoginPage() {
 		try {
 			const response = await loginRequest({ email, password });
 			if (response.success && response.data) {
-				setToken(response.data.token);
-				setData({ user: response.data.user });
-				router.push("/dashboard");
+				if (isLogin2FaRequired(response.data)) {
+					setPreAuthToken(response.data.preAuthToken);
+					setTwoFaModalOpen(true);
+				} else {
+					setToken(response.data.token);
+					setData({ user: response.data.user });
+					router.push("/dashboard");
+				}
 			} else {
 				showErrorToast(response, {
 					title: "Login failed",
@@ -281,6 +397,54 @@ export default function LoginPage() {
 					Sign up
 				</Link>
 			</p>
+
+			<Modal
+				open={twoFaModalOpen}
+				onClose={handleTwoFaModalClose}
+				title="Two-factor authentication"
+				ariaLabel="Two-factor authentication"
+				closeOnOverlayClick={!isVerifying}
+				contentClassName="max-w-md!"
+				footer={
+					<Button
+						type="button"
+						onClick={handleVerify2Fa}
+						disabled={twoFaOtp.join("").length !== OTP_LENGTH || isVerifying}
+						aria-busy={isVerifying}
+						className="cursor-pointer"
+					>
+						{isVerifying ? "Verifying…" : "Verify"}
+					</Button>
+				}
+			>
+				<p className="text-sm text-text-secondary mb-4">
+					Enter the 6-digit code from your authenticator app.
+				</p>
+				<div
+					className="flex gap-2 justify-center"
+					role="group"
+					aria-label="6-digit verification code"
+				>
+					{twoFaOtp.map((digit, index) => (
+						<input
+							key={index}
+							ref={(el) => {
+								twoFaInputRefs.current[index] = el;
+							}}
+							type="text"
+							inputMode="numeric"
+							maxLength={6}
+							value={digit}
+							onChange={(e) => handleTwoFaOtpChange(index, e.target.value)}
+							onKeyDown={(e) => handleTwoFaKeyDown(index, e)}
+							onPaste={handleTwoFaPaste}
+							disabled={isVerifying}
+							className="h-12 w-12 rounded-lg border border-border-primary bg-bg-card text-center text-lg font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-green-primary/20 focus:border-green-primary disabled:opacity-60"
+							aria-label={`Digit ${index + 1}`}
+						/>
+					))}
+				</div>
+			</Modal>
 		</div>
 	);
 }

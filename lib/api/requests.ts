@@ -30,6 +30,8 @@ import type {
   TwoFaStatusResponseData,
   TwoFaDisablePayload,
   TwoFaDisableResponseData,
+  TwoFaVerifyLoginPayload,
+  TwoFaVerifyLoginResponseData,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -159,6 +161,16 @@ export function useTwoFaDisableMutation() {
   return useCustomFetchMutation<TwoFaDisableResponseData>("/auth/2fa/disable", "DELETE", {
     invalidateQueries: [[TWO_FA_STATUS_QUERY_KEY]],
   });
+}
+
+/** POST /auth/2fa/verify-login */
+export async function twoFaVerifyLoginRequest(
+  body: TwoFaVerifyLoginPayload
+): Promise<TypeApiResponse<TwoFaVerifyLoginResponseData>> {
+  return customFetch<TypeApiResponse<TwoFaVerifyLoginResponseData>>(
+    "/auth/2fa/verify-login",
+    { method: "post", body }
+  );
 }
 
 export { createQueryKey };

@@ -132,15 +132,18 @@ All interceptors (auth header, error toasts) apply.
 - Imports `customFetch`, `useCustomFetchQuery`, `useCustomFetchMutation`, `createQueryKey` from `./client` and types from `./types`.
 - Defines one function or hook per endpoint, e.g.:
   - **Auth:** `loginRequest`, `registerRequest`, `getCurrentUser`, `verifyOtpRequest`, `sendOtpRequest`, `forgotPasswordRequest`, `resetPasswordRequest`, `changePasswordRequest` (when present)
-  - **2FA:** `useTwoFaStatusQuery`, `twoFaSetupRequest`, `twoFaConfirmRequest`, `useTwoFaDisableMutation` — see below.
+  - **2FA:** `useTwoFaStatusQuery`, `twoFaSetupRequest`, `twoFaConfirmRequest`, `useTwoFaDisableMutation`, `twoFaVerifyLoginRequest` — see below.
   - **Example:** `getExample`, `useExampleQuery`, `useCreateExampleMutation`
 
 ### 4.1 Two-factor authentication (2FA)
 
 - **POST /auth/2fa/setup** — No body. Returns `qrCode` (data URL), `secret`, `backupCodes` (array), `message`. Used when enabling 2FA from Dashboard Settings > Security.
 - **POST /auth/2fa/confirm** — Body: `secret`, `token` (6-digit code), `backupCodes` (one selected backup code string). Used to complete 2FA setup after the user scans the QR and selects a backup code.
+- **POST /auth/2fa/verify-login** — Body: `preAuthToken`, `code` (6-digit string). Returns `user` and `token`. Used after login when the backend returns `requiresTwoFactor: true`; the app shows a modal for the 6-digit code, then calls this to complete sign-in (set token, user, redirect to dashboard).
 - **GET /auth/2fa/status** — No body. Returns `enabled` (boolean). Used for the Settings Security toggle and after enable/disable.
 - **DELETE /auth/2fa/disable** — Body: `password`. Used to turn off 2FA from Settings. The API client sends the body as `config.data` for DELETE requests.
+
+The **login** flow: when `loginRequest` returns `data.requiresTwoFactor === true`, the app does not set the session token; it stores `preAuthToken` and shows a 2FA verification modal. After the user submits the 6-digit code, the app calls **POST /auth/2fa/verify-login** with `preAuthToken` and `code`. On success it sets the token and user, shows a success toast, and redirects to `/dashboard` (same as a normal login). The login response type is a union of standard login data and 2FA-required data so the client can branch on `requiresTwoFactor`.
 
 The dashboard **Settings > Security** tab uses these in the “Two-factor authentication” section: a status-driven toggle, an enable modal (setup → QR + backup code selection → 6-digit token confirm), and a disable modal (password). Both modals set `closeOnOverlayClick={false}` while loading or submitting so users cannot close by clicking outside or pressing Escape.
 
@@ -188,7 +191,7 @@ The **API client** uses `getToken()` in the request interceptor to send `Authori
   - `setData(partial)` — set store fields (e.g. `setData({ user })`).
   - `fetchUser()` — GET `/auth/me` via `getCurrentUser()`; on success sets `user` from response; on failure clears user and token.
 
-After **login**, the app sets the token with `setToken`, sets the user (e.g. from login response or by calling `fetchUser()`). The **dashboard layout** (or similar) can call `fetchUser()` when a token exists so the UI has the current user. On **logout**, the app calls `clearToken()` and `setData({ user: null })`. After **verify-email success**, the app calls `clearAllAuthStorage()` and `setData({ user: null })` before redirecting to login.
+After **login**, the app sets the token with `setToken`, sets the user (e.g. from login response or by calling `fetchUser()`). If login returns `data.requiresTwoFactor === true`, the app does not set the token yet; it shows a 2FA modal, then after **POST /auth/2fa/verify-login** succeeds it sets the token and user and redirects to the dashboard. The **dashboard layout** (or similar) can call `fetchUser()` when a token exists so the UI has the current user. On **logout**, the app calls `clearToken()` and `setData({ user: null })`. After **verify-email success**, the app calls `clearAllAuthStorage()` and `setData({ user: null })` before redirecting to login.
 
 ---
 
@@ -203,7 +206,7 @@ After **login**, the app sets the token with `setToken`, sets the user (e.g. fro
 
 ## 7. Flow summary
 
-1. **Login:** Form validated with `loginSchema` → `loginRequest({ email, password })` → on success: `setToken(data.token)`, `setData({ user: data.user })` (or `fetchUser()`), redirect to `/dashboard`.
+1. **Login:** Form validated with `loginSchema` → `loginRequest({ email, password })` → on success: if `data.requiresTwoFactor` is true, store `preAuthToken` and show 2FA modal; on verify-login success, `setToken`, `setData({ user })`, toast, redirect to `/dashboard`. Otherwise (no 2FA): `setToken(data.token)`, `setData({ user: data.user })`, redirect to `/dashboard`.
 2. **Register:** Form validated with `registerSchema` → `registerRequest(...)` → on success: `setRegisterData(data)`, redirect to `/verify-email`. Verify-email page can read email from `getRegisterData()` or query params.
 3. **Protected pages:** If middleware is used, it checks the token and optionally `/auth/me`, then allows or redirects. On the client, the dashboard layout (or similar) calls `fetchUser()` when a token exists so the auth store has the current user.
 4. **Any API call:** Uses the shared Axios instance → request interceptor adds `Bearer` token if present → backend responds → on error, response interceptor turns the body into a title + message and shows a Sonner toast, then rejects so callers can handle it too if needed.
