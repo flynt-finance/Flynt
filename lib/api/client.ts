@@ -268,7 +268,10 @@ export function useCustomFetchMutation<T = unknown>(
           response = await axiosInstance.patch<ApiResponse<T>>(fullUrl, body, config);
           break;
         case "DELETE":
-          response = await axiosInstance.delete<ApiResponse<T>>(fullUrl, config);
+          response = await axiosInstance.delete<ApiResponse<T>>(fullUrl, {
+            ...config,
+            ...(body !== undefined && body !== null ? { data: body } : {}),
+          });
           break;
         default:
           throw new Error(`Unsupported method: ${method}`);

@@ -96,6 +96,37 @@ export interface ChangePasswordResponseData {
   message: string
 }
 
+export interface TwoFaSetupResponseData {
+  qrCode: string
+  secret: string
+  backupCodes: string[]
+  message: string
+}
+
+export interface TwoFaConfirmPayload {
+  secret: string
+  token: string
+  backupCodes: string
+}
+
+export interface TwoFaConfirmResponseData {
+  message: string
+  backupCodes: string
+  notice: string
+}
+
+export interface TwoFaStatusResponseData {
+  enabled: boolean
+}
+
+export interface TwoFaDisablePayload {
+  password: string
+}
+
+export interface TwoFaDisableResponseData {
+  [key: string]: unknown
+}
+
 export interface CustomFetchConfig {
   method?: string
   headers?: Record<string, string>

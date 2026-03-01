@@ -131,8 +131,18 @@ All interceptors (auth header, error toasts) apply.
 
 - Imports `customFetch`, `useCustomFetchQuery`, `useCustomFetchMutation`, `createQueryKey` from `./client` and types from `./types`.
 - Defines one function or hook per endpoint, e.g.:
-  - **Auth:** `loginRequest`, `registerRequest`, `getCurrentUser`, `verifyOtpRequest`, `sendOtpRequest`, `forgotPasswordRequest`, `resetPasswordRequest` (when present)
+  - **Auth:** `loginRequest`, `registerRequest`, `getCurrentUser`, `verifyOtpRequest`, `sendOtpRequest`, `forgotPasswordRequest`, `resetPasswordRequest`, `changePasswordRequest` (when present)
+  - **2FA:** `useTwoFaStatusQuery`, `twoFaSetupRequest`, `twoFaConfirmRequest`, `useTwoFaDisableMutation` — see below.
   - **Example:** `getExample`, `useExampleQuery`, `useCreateExampleMutation`
+
+### 4.1 Two-factor authentication (2FA)
+
+- **POST /auth/2fa/setup** — No body. Returns `qrCode` (data URL), `secret`, `backupCodes` (array), `message`. Used when enabling 2FA from Dashboard Settings > Security.
+- **POST /auth/2fa/confirm** — Body: `secret`, `token` (6-digit code), `backupCodes` (one selected backup code string). Used to complete 2FA setup after the user scans the QR and selects a backup code.
+- **GET /auth/2fa/status** — No body. Returns `enabled` (boolean). Used for the Settings Security toggle and after enable/disable.
+- **DELETE /auth/2fa/disable** — Body: `password`. Used to turn off 2FA from Settings. The API client sends the body as `config.data` for DELETE requests.
+
+The dashboard **Settings > Security** tab uses these in the “Two-factor authentication” section: a status-driven toggle, an enable modal (setup → QR + backup code selection → 6-digit token confirm), and a disable modal (password). Both modals set `closeOnOverlayClick={false}` while loading or submitting so users cannot close by clicking outside or pressing Escape.
 
 To add a new endpoint:
 
@@ -248,11 +258,13 @@ This keeps auth, base URL, and error handling in one place and lets new features
 
 - **Providers:** [components/Providers.tsx](components/Providers.tsx) wraps the app with `QueryClientProvider`, `ThemeProvider`, `DebtProvider`, and `ThemeAwareToaster`. Order matters: React Query and theme are outer so they are available everywhere.
 - **Environment:** `NEXT_PUBLIC_API_URL` is used for the API base. Any `NEXT_PUBLIC_*` variable is available on the client; set them in `.env` or `.env.local`.
+- **Modal:** [components/modal/Modal.tsx](components/modal/Modal.tsx) provides a reusable dialog with overlay, title, content, and optional footer. It supports `closeOnOverlayClick` (default `true`). When set to `false`, clicking the overlay or pressing Escape does not close the modal—use this during loading or submitting so users cannot dismiss the modal accidentally (e.g. Settings 2FA enable/disable modals pass `closeOnOverlayClick={false}` while a request is in progress).
 - **Key files (short reference):**
   - **API:** `lib/api/types.ts`, `lib/api/client.ts`, `lib/api/requests.ts`
   - **Auth:** `lib/auth-cookie.ts`, `stores/use-auth-store.ts`
   - **Theme:** `contexts/ThemeContext.tsx`, `app/globals.css`, `components/ThemeToggle.tsx`, `components/ThemeAwareToaster.tsx`
   - **Validation:** `lib/validations/auth.ts`
+  - **Modal:** `components/modal/Modal.tsx`
 
 ---
 

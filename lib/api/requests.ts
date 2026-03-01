@@ -24,7 +24,16 @@ import type {
   ResetPasswordResponseData,
   ChangePasswordPayload,
   ChangePasswordResponseData,
+  TwoFaSetupResponseData,
+  TwoFaConfirmPayload,
+  TwoFaConfirmResponseData,
+  TwoFaStatusResponseData,
+  TwoFaDisablePayload,
+  TwoFaDisableResponseData,
 } from "./types";
+
+/** 2FA status query key for invalidations */
+export const TWO_FA_STATUS_QUERY_KEY = "2fa-status";
 
 /** Example: GET /example - add response type in types.ts when you have a real endpoint */
 export const EXAMPLE_QUERY_KEY = "example";
@@ -118,6 +127,37 @@ export async function changePasswordRequest(
   return customFetch<TypeApiResponse<ChangePasswordResponseData>>("/auth/change-password", {
     method: "post",
     body,
+  });
+}
+
+/** GET /auth/2fa/status */
+export function useTwoFaStatusQuery() {
+  return useCustomFetchQuery<TwoFaStatusResponseData>("/auth/2fa/status", {
+    queryKey: [TWO_FA_STATUS_QUERY_KEY],
+  });
+}
+
+/** POST /auth/2fa/setup */
+export async function twoFaSetupRequest(): Promise<TypeApiResponse<TwoFaSetupResponseData>> {
+  return customFetch<TypeApiResponse<TwoFaSetupResponseData>>("/auth/2fa/setup", {
+    method: "post",
+  });
+}
+
+/** POST /auth/2fa/confirm */
+export async function twoFaConfirmRequest(
+  body: TwoFaConfirmPayload
+): Promise<TypeApiResponse<TwoFaConfirmResponseData>> {
+  return customFetch<TypeApiResponse<TwoFaConfirmResponseData>>("/auth/2fa/confirm", {
+    method: "post",
+    body,
+  });
+}
+
+/** DELETE /auth/2fa/disable */
+export function useTwoFaDisableMutation() {
+  return useCustomFetchMutation<TwoFaDisableResponseData>("/auth/2fa/disable", "DELETE", {
+    invalidateQueries: [[TWO_FA_STATUS_QUERY_KEY]],
   });
 }
 

@@ -11,6 +11,8 @@ interface ModalProps {
 	children: ReactNode;
 	footer?: ReactNode;
 	ariaLabel?: string;
+	/** When false, clicking the overlay or pressing Escape will not close the modal (e.g. during loading). Default true. */
+	closeOnOverlayClick?: boolean;
 }
 
 export default function Modal({
@@ -21,27 +23,28 @@ export default function Modal({
 	footer,
 	ariaLabel,
 	contentClassName,
+	closeOnOverlayClick = true,
 }: ModalProps) {
 	const overlayRef = useRef<HTMLDivElement>(null);
 	const previousActiveElement = useRef<HTMLElement | null>(null);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
-			if (e.key === "Escape") {
+			if (closeOnOverlayClick && e.key === "Escape") {
 				e.preventDefault();
 				onClose();
 			}
 		},
-		[onClose]
+		[onClose, closeOnOverlayClick]
 	);
 
 	const handleOverlayClick = useCallback(
 		(e: React.MouseEvent<HTMLDivElement>) => {
-			if (e.target === overlayRef.current) {
+			if (closeOnOverlayClick && e.target === overlayRef.current) {
 				onClose();
 			}
 		},
-		[onClose]
+		[onClose, closeOnOverlayClick]
 	);
 
 	useEffect(() => {
@@ -63,7 +66,7 @@ export default function Modal({
 	return (
 		<div
 			ref={overlayRef}
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 "
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur"
 			onClick={handleOverlayClick}
 			onKeyDown={handleKeyDown}
 			role="dialog"
@@ -72,7 +75,7 @@ export default function Modal({
 		>
 			<div
 				className={cn(
-					"w-full max-w-3xl rounded-xl border border-border-primary bg-bg-card shadow-xl flex flex-col max-h-[90vh] overflow-hidden",
+					"transIn w-full max-w-3xl rounded-xl border border-border-primary bg-bg-card shadow-xl flex flex-col max-h-[90vh] overflow-hidden transition-all duration-300",
 					contentClassName
 				)}
 				onClick={(e) => e.stopPropagation()}
