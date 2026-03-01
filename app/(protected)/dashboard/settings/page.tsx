@@ -526,7 +526,7 @@ export default function SettingsPage() {
 							</Card>
 
 							<Card padding="lg" variant="default" className="mt-6">
-								<div className="flex items-center justify-between gap-4">
+								<div className="flex items-center justify-between gap-4 flex-wrap">
 									<div>
 										<h2 className="text-2xl font-semibold text-text-primary">
 											Two-factor authentication
@@ -536,7 +536,7 @@ export default function SettingsPage() {
 											your authenticator app when signing in.
 										</p>
 									</div>
-									<div className="shrink-0 flex items-center gap-3">
+									<div className="shrink-0 flex items-center gap-3 ml-auto">
 										{twoFaStatusLoading ? (
 											<div
 												className="h-6 w-11 shrink-0 rounded-full bg-bg-elevated animate-pulse"
