@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
-import { clearToken } from "@/lib/auth-cookie";
+import { clearLogoutStorage } from "@/lib/auth-cookie";
 import { useAuthStore } from "@/stores/use-auth-store";
 import type { User } from "@/lib/api/types";
 
@@ -47,7 +47,7 @@ export default function DashboardLayoutClient({
 	}, [sidebarOpen]);
 
 	const handleLogout = () => {
-		clearToken();
+		clearLogoutStorage();
 		setData({ user: null });
 		router.push("/login");
 	};

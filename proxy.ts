@@ -28,11 +28,20 @@ const hasValidRegisterData = (request: NextRequest): boolean => {
   }
 };
 
-const clearTokenCookie = (response: NextResponse): void => {
-  response.headers.set(
-    "Set-Cookie",
-    `${AUTH_TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
-  );
+/** Clears auth token and initial-user cookie (server-side; required for httpOnly cookie). */
+const clearAuthCookies = (response: NextResponse): void => {
+  response.cookies.set(AUTH_TOKEN_KEY, "", {
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax",
+  });
+  response.cookies.set(FLYNT_INITIAL_USER_COOKIE, "", {
+    path: "/",
+    maxAge: 0,
+    httpOnly: false,
+    sameSite: "lax",
+  });
+  console.log("Auth cookies cleared");
 };
 
 /** Edge-compatible base64url encode (no Buffer). */
@@ -52,18 +61,19 @@ export async function proxy(request: NextRequest) {
 
   if (!token) {
     if (isProtectedPath(pathname)) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      const redirect = NextResponse.redirect(new URL("/login", request.url));
+      clearAuthCookies(redirect);
+      return redirect;
     }
     if (pathname === "/verify-email" && !hasValidRegisterData(request)) {
       return NextResponse.redirect(new URL("/register", request.url));
     }
-    return NextResponse.next();
+    return clearAuthCookies(NextResponse.next());
   }
-
   const existingUserCookie = request.cookies.get(FLYNT_INITIAL_USER_COOKIE)?.value;
   if (existingUserCookie) {
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-flynt-user", existingUserCookie);
+    requestHeaders.set("x-flynt-user", token);
     if (isAuthPath(pathname)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -81,7 +91,7 @@ export async function proxy(request: NextRequest) {
 
     if (!valid) {
       const redirect = NextResponse.redirect(new URL("/login", request.url));
-      clearTokenCookie(redirect);
+      clearAuthCookies(redirect);
       return redirect;
     }
 
@@ -102,7 +112,7 @@ export async function proxy(request: NextRequest) {
         path: "/",
         maxAge: INITIAL_USER_COOKIE_MAX_AGE_SECONDS,
         sameSite: "lax",
-        httpOnly: true,
+        httpOnly: false,
       });
       return response;
     }
@@ -116,7 +126,7 @@ export async function proxy(request: NextRequest) {
     });
   } catch {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
-    clearTokenCookie(redirect);
+    clearAuthCookies(redirect);
     return redirect;
   }
 }

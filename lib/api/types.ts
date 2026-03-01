@@ -56,6 +56,16 @@ export interface TwoFaVerifyLoginResponseData {
   token: string
 }
 
+export interface SocialAuthPayload {
+  provider: "google" | "apple"
+  token: string
+}
+
+export interface SocialAuthResponseData {
+  user: User
+  token: string
+}
+
 export interface RegisterPayload {
   email: string
   password: string

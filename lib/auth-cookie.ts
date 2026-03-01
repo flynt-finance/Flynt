@@ -2,6 +2,7 @@ import type { RegisterResponseData } from "@/lib/api/types";
 
 const AUTH_TOKEN_KEY = "flynt_token";
 const REGISTER_DATA_KEY = "flynt_register_data";
+const INITIAL_USER_KEY = "flynt_initial_user";
 const MAX_AGE_DAYS = 7;
 const REGISTER_DATA_MAX_AGE_SECONDS = 900; // 15 minutes
 
@@ -32,6 +33,23 @@ export const setToken = (token: string): void =>
 export const clearToken = (): void => {
   if (typeof document === "undefined") return;
   document.cookie = `${AUTH_TOKEN_KEY}=; path=/; max-age=0`;
+};
+
+export const clearInitialUserCookie = (): void => {
+  if (typeof document === "undefined") return;
+  document.cookie = `${INITIAL_USER_KEY}=; path=/; max-age=0`;
+};
+
+export const clearLogoutStorage = (): void => {
+  if (typeof document === "undefined") return;
+  clearToken();
+  clearInitialUserCookie();
+  try {
+    if (typeof sessionStorage !== "undefined") sessionStorage.clear();
+    if (typeof localStorage !== "undefined") localStorage.clear();
+  } catch {
+    // ignore
+  }
 };
 
 export const setRegisterData = (data: RegisterResponseData | { email: string; name: string }): void => {

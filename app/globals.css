@@ -217,6 +217,30 @@ body {
 	transition-duration: 150ms;
 }
 
+.gBtn > div:has(div[role="button"]) {
+	height: 100% !important;
+}
+.gBtn div[role="button"] {
+	background-color: var(--bg-card) !important;
+	border: 1px solid var(--border-color) !important;
+	border-radius: 12px !important;
+	outline: none !important;
+	box-shadow: none !important;
+	cursor: pointer !important;
+	transition: all 0.3s ease-in-out !important;
+	transform: none !important;
+	padding-block: 10px !important;
+	padding-inline: 16px !important;
+	height: 100% !important;
+}
+
+.gBtn div[role="button"] span {
+	color: var(--text-primary);
+	font-weight: 500;
+	font-size: 14px;
+	font-family: var(--font-montserrat), system-ui, -apple-system, sans-serif;
+}
+
 .transIn {
 	animation: transIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }

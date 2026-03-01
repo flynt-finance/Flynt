@@ -260,7 +260,7 @@ This keeps auth, base URL, and error handling in one place and lets new features
 ## 12. Other useful info
 
 - **Providers:** [components/Providers.tsx](components/Providers.tsx) wraps the app with `QueryClientProvider`, `ThemeProvider`, `DebtProvider`, and `ThemeAwareToaster`. Order matters: React Query and theme are outer so they are available everywhere.
-- **Environment:** `NEXT_PUBLIC_API_URL` is used for the API base. Any `NEXT_PUBLIC_*` variable is available on the client; set them in `.env` or `.env.local`.
+- **Environment:** `NEXT_PUBLIC_API_URL` is used for the API base. `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is used for Google Sign-In (Social OAuth); set it in `.env` or `.env.local` (client-side only—do not add a Google client secret). Any `NEXT_PUBLIC_*` variable is available on the client.
 - **Modal:** [components/modal/Modal.tsx](components/modal/Modal.tsx) provides a reusable dialog with overlay, title, content, and optional footer. It supports `closeOnOverlayClick` (default `true`). When set to `false`, clicking the overlay or pressing Escape does not close the modal—use this during loading or submitting so users cannot dismiss the modal accidentally (e.g. Settings 2FA enable/disable modals pass `closeOnOverlayClick={false}` while a request is in progress).
 - **Key files (short reference):**
   - **API:** `lib/api/types.ts`, `lib/api/client.ts`, `lib/api/requests.ts`

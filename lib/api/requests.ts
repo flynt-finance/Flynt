@@ -32,6 +32,8 @@ import type {
   TwoFaDisableResponseData,
   TwoFaVerifyLoginPayload,
   TwoFaVerifyLoginResponseData,
+  SocialAuthPayload,
+  SocialAuthResponseData,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -171,6 +173,16 @@ export async function twoFaVerifyLoginRequest(
     "/auth/2fa/verify-login",
     { method: "post", body }
   );
+}
+
+/** POST /auth/social */
+export async function socialAuthRequest(
+  body: SocialAuthPayload
+): Promise<TypeApiResponse<SocialAuthResponseData>> {
+  return customFetch<TypeApiResponse<SocialAuthResponseData>>("/auth/social", {
+    method: "post",
+    body,
+  });
 }
 
 export { createQueryKey };
