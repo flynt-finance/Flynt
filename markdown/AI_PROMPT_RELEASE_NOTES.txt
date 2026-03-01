@@ -1,0 +1,116 @@
+# AI Prompt: Generate Release Notes from Git History
+
+## Direct Copy-Paste Prompt
+
+```
+You are an expert technical writer specializing in creating comprehensive release notes from git commit history.
+
+TASK:
+Generate publication-ready release notes by:
+1. Analyzing git commit history from a starting commit hash to HEAD
+2. Filling a provided release notes template with actual changes
+3. Removing all HTML comments from the output
+
+INPUT PROVIDED:
+- Release Notes Template (RELEASE_NOTES_TEMPLATE.md)
+- Starting Commit Hash: [COMMIT_HASH]
+
+PROCESS:
+
+Step 1: Analyze Git History
+- Get all commits: git log --oneline [COMMIT_HASH]..HEAD
+- Get file changes: git diff --name-status [COMMIT_HASH]..HEAD
+- Get statistics: git diff --stat [COMMIT_HASH]..HEAD
+- Analyze commit messages to identify:
+  * Features: "feat:", "add:", "implement:", "new:"
+  * Bug fixes: "fix:", "bug:", "resolve:", "correct:"
+  * Performance: "perf:", "optimize:", "improve performance"
+  * Security: "security:", "fix security", "vulnerability"
+  * Breaking changes: "breaking:", "BREAKING CHANGE", "remove:"
+  * Refactoring: "refactor:", "restructure:", "reorganize:"
+
+Step 2: Categorize All Changes
+Organize into:
+- 🎉 New Features (user-facing functionality)
+- 🔧 Technical Improvements (code quality, architecture)
+- 🐛 Bug Fixes (issues resolved)
+- 🚀 Performance Improvements (optimizations)
+- 🔒 Security & Reliability (security fixes, stability)
+- ⚠️ Breaking Changes (migration required)
+- 📁 Files Modified (organized by category)
+
+Step 3: Fill Template
+- Replace [VERSION_NUMBER or COMMIT_HASH] with: "Post-Merge [SHORT_HASH]" or version if available
+- Replace [DATE] with today's date: "Month Day, Year"
+- Replace all [PLACEHOLDER] text with actual content
+- Replace [Feature Category Name] with real category names
+- Fill all sections with content based on git analysis
+
+Step 4: Clean Output
+- DELETE ALL HTML COMMENTS (<!-- -->) - remove completely
+- Remove empty sections (if no content, remove entire section)
+- Ensure all placeholders are replaced
+- Maintain proper markdown formatting
+
+Step 5: Quality Assurance
+✓ All HTML comments removed
+✓ All placeholders filled
+✓ Empty sections removed
+✓ Content matches git history
+✓ Markdown formatting valid
+✓ Professional, clear language
+
+OUTPUT REQUIREMENTS:
+- Clean markdown file ready for publication
+- No HTML comments whatsoever
+- Accurate content based on actual git changes
+- Proper categorization of all changes
+- Clear, concise descriptions
+- Code examples where relevant
+- File paths relative to project root
+
+SPECIAL INSTRUCTIONS:
+- Be accurate: Only include changes that exist in git history
+- Be specific: Avoid vague descriptions
+- Be organized: Group related changes
+- Be concise: Clear, brief descriptions
+- Be complete: Don't skip sections with content
+- Prioritize user-facing features first
+
+If no changes exist between commits, indicate this clearly.
+If commit hash is invalid, report the error.
+
+Output ONLY the final release notes markdown file - no explanations, no additional text, just the clean RELEASE_NOTES.md content.
+```
+
+## Usage Instructions
+
+1. Copy the prompt above (between the triple backticks)
+2. Replace `[COMMIT_HASH]` with your actual starting commit hash
+3. Provide the AI with:
+   - The prompt
+   - The RELEASE_NOTES_TEMPLATE.md file content
+   - Access to git history (or provide git log output)
+
+4. The AI will generate a clean RELEASE_NOTES.md file
+
+## Example Usage
+
+```
+[COMMIT_HASH] = e2f6760b52a84c366bd78442d817dce5817b3499
+
+Provide to AI:
+1. The prompt above (with commit hash filled in)
+2. Content of RELEASE_NOTES_TEMPLATE.md
+3. Git history: git log e2f6760b52a84c366bd78442d817dce5817b3499..HEAD
+```
+
+## Quick Version (Minimal Prompt)
+
+For a shorter prompt, use this:
+
+```
+Generate release notes from git history [COMMIT_HASH]..HEAD using the provided template. 
+Analyze commits, categorize changes (features, fixes, improvements), fill the template, 
+and remove ALL HTML comments. Output clean markdown only.
+```
