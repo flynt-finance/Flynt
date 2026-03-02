@@ -260,13 +260,14 @@ This keeps auth, base URL, and error handling in one place and lets new features
 ## 12. Other useful info
 
 - **Providers:** [components/Providers.tsx](components/Providers.tsx) wraps the app with `QueryClientProvider`, `ThemeProvider`, `DebtProvider`, and `ThemeAwareToaster`. Order matters: React Query and theme are outer so they are available everywhere.
-- **Environment:** `NEXT_PUBLIC_API_URL` is used for the API base. `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is used for Google Sign-In (Social OAuth); set it in `.env` or `.env.local` (client-side only—do not add a Google client secret). Any `NEXT_PUBLIC_*` variable is available on the client.
+- **Environment:** `NEXT_PUBLIC_API_URL` is used for the API base. `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is used for Google Sign-In (Social OAuth); set it in `.env` or `.env.local` (client-side only—do not add a Google client secret). Any `NEXT_PUBLIC_*` variable is available on the client. **Waitlist:** The waitlist form POSTs to the app’s own **`/api/waitlist`** route (Next.js API route). That route validates the body and forwards it to a Google Apps Script Web App URL to append a row to a Google Sheet. Set `WAITLIST_GOOGLE_SCRIPT_URL` in `.env.local` (or deployment env) to the script’s deploy URL (e.g. `https://script.google.com/macros/s/.../exec`). The script URL is server-only and never exposed to the client.
 - **Modal:** [components/modal/Modal.tsx](components/modal/Modal.tsx) provides a reusable dialog with overlay, title, content, and optional footer. It supports `closeOnOverlayClick` (default `true`). When set to `false`, clicking the overlay or pressing Escape does not close the modal—use this during loading or submitting so users cannot dismiss the modal accidentally (e.g. Settings 2FA enable/disable modals pass `closeOnOverlayClick={false}` while a request is in progress).
 - **Key files (short reference):**
   - **API:** `lib/api/types.ts`, `lib/api/client.ts`, `lib/api/requests.ts`
   - **Auth:** `lib/auth-cookie.ts`, `stores/use-auth-store.ts`
   - **Theme:** `contexts/ThemeContext.tsx`, `app/globals.css`, `components/ThemeToggle.tsx`, `components/ThemeAwareToaster.tsx`
-  - **Validation:** `lib/validations/auth.ts`
+  - **Validation:** `lib/validations/auth.ts`, `lib/validations/waitlist.ts`
+  - **Waitlist API:** `app/api/waitlist/route.ts` (POST; writes to Google Sheet via Apps Script URL)
   - **Modal:** `components/modal/Modal.tsx`
 
 ---

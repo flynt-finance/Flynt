@@ -3,8 +3,11 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
 import { toast } from "sonner";
+import {
+	waitlistFormSchema,
+	type WaitlistFormValues,
+} from "@/lib/validations/waitlist";
 import ThemeToggle from "@/components/ThemeToggle";
 import { HeaderLogo } from "@/components/HeaderLogo";
 import { Card, Input, Button, Select } from "@/components/ui";
@@ -42,22 +45,6 @@ const HEAR_ABOUT_OPTIONS: SelectOption[] = [
 	{ value: "blog", label: "Blog" },
 	{ value: "other", label: "Other" },
 ];
-
-const waitlistFormSchema = z.object({
-	fullName: z.string().min(2, "Full name must be at least 2 characters"),
-	email: z.string().email("Please enter a valid email"),
-	phone: z.string().min(10, "Please enter a valid phone number"),
-	primaryGoal: z.string().min(1, "Please select a primary goal"),
-	currentSavingMethods: z
-		.string()
-		.min(1, "Please select current saving/investment methods"),
-	monthlySavingsRange: z
-		.string()
-		.min(1, "Please select a monthly savings range"),
-	howDidYouHear: z.string().min(1, "Please select how you heard about us"),
-});
-
-type WaitlistFormValues = z.infer<typeof waitlistFormSchema>;
 
 const INITIAL_FORM: WaitlistFormValues = {
 	fullName: "",
@@ -111,8 +98,23 @@ export default function WaitlistPage() {
 
 			setIsSubmitting(true);
 			try {
-				await new Promise((resolve) => setTimeout(resolve, 700));
-				console.log("Waitlist submission:", result.data);
+				const res = await fetch("/api/waitlist", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(result.data),
+				});
+
+				const data = await res.json().catch(() => ({}));
+
+				if (!res.ok) {
+					const message =
+						typeof data?.message === "string"
+							? data.message
+							: "Something went wrong. Please try again.";
+					toast.error("Could not join waitlist", { description: message });
+					return;
+				}
+
 				toast.success("You're on the list! We'll be in touch soon.");
 				setSuccessModalOpen(true);
 			} finally {
@@ -136,18 +138,18 @@ export default function WaitlistPage() {
 					</div>
 					<div className="flex items-center gap-3">
 						<ThemeToggle />
-						<Link
+						{/* <Link
 							href="/waitlist"
 							className="rounded-lg border border-border-primary bg-transparent px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-green-primary/10"
 						>
 							Join waitlist
-						</Link>
-						<Link
-							href="/login"
+						</Link> */}
+						{/* <Link
+							href="/waitlist"
 							className="rounded-lg bg-green-primary px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-green-hover"
 						>
 							View Demo
-						</Link>
+						</Link> */}
 					</div>
 				</div>
 			</header>
