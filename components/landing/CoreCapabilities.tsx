@@ -15,15 +15,15 @@ import { motion } from "framer-motion";
 const capabilities = [
   {
     id: "predictive",
-    title: "Unified Categorization",
-    desc: "Real-time neural classification of raw transaction data across all linked institutions.",
+    title: "Secure Aggregation",
+    desc: "A single, encrypted source of truth for all your accounts — banks, credit cards, loans, and investments.",
     icon: <ShieldAlert className="w-5 h-5" />,
     status: "Active Scan",
-    size: "lg", // Larger card for core feature
+    size: "lg",
   },
   {
     id: "debt",
-    title: "Behavioral Reasoning",
+    title: "Real-Time Monitoring",
     desc: "Intelligent analysis of your cash flow to deliver personalized, actionable fiscal guidance.",
     icon: <Layers className="w-5 h-5" />,
     status: "Logic: Online",
@@ -71,25 +71,18 @@ export default function CoreCapabilities() {
         <div className="mb-20 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-4">
-              <span className="h-[1px] w-8 bg-emerald-500" />
+              <span className="h-px w-8 bg-emerald-500" />
               <h2 className="text-[10px] font-bold uppercase tracking-[0.4em] text-emerald-500">
                 Operating Modules
               </h2>
             </div>
-            <h3 className="text-4xl font-medium tracking-tight text-text-secondary dark:text-white md:text-6xl">
-              The Architecture of <br />
+            <h3 className="text-4xl font-medium tracking-tight text-text-secondary dark:text-white md:text-5xl">
+              Everything you need for <br />
               <span className="text-slate-400 font-light italic">
-                Fiscal Autonomy.
+                Financial clarity.
               </span>
             </h3>
           </div>
-          {/* <div className="lg:mb-2">
-            <p className="max-w-[280px] text-xs font-mono uppercase tracking-wider text-slate-500 leading-relaxed">
-              [ 06 ] Active Protocols <br />
-              System Load: Optimized <br />
-              Security: AES-256 Verified
-            </p>
-          </div> */}
         </div>
 
         {/* Bento Grid Layout */}

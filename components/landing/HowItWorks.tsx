@@ -1,32 +1,43 @@
 "use client";
 
-import React from "react";
-import { ArrowRight, ShieldCheck, Cpu, BarChart3, Zap } from "lucide-react";
+import { ShieldCheck, Cpu, Zap, RefreshCw, Brain, Ban } from "lucide-react";
 
 const steps = [
   {
     id: "01",
     title: "Secure Account Connection",
-    desc: "Flynt securely connects your bank accounts and cards, giving you one clear view of your money in real time.",
+    desc: "Seamlessly link your banks, credit cards, loans, and income sources with bank-grade encryption.",
     icon: <ShieldCheck className="w-5 h-5 text-green-primary" />,
   },
   {
     id: "02",
-    title: "Smart Spending Analysis",
-    desc: "Our AI studies how you earn and spend, spotting patterns, risks, and opportunities to save or invest.",
+    title: "Data Normalization",
+    desc: "We aggregate and organize your data for a unified, real-time view across all accounts",
     icon: <Cpu className="w-5 h-5 text-blue" />,
   },
   {
     id: "03",
     title: "Intelligent Decision Engine",
-    desc: "Flynt evaluates every spending decision against your budgets, goals, and long-term financial plans.",
-    icon: <BarChart3 className="w-5 h-5 text-orange" />,
+    desc: "Our models analyze spending patterns, income, and obligations to understand your financial picture.",
+    icon: <Brain className="w-5 h-5 text-green-primary" />,
   },
   {
     id: "04",
-    title: "Automatic Money Control",
-    desc: "Spending and transfers happen only when they fit your plan—using smart cards and real-time controls.",
-    icon: <Zap className="w-5 h-5 text-purple" />,
+    title: "Actionable Insights",
+    desc: "Receive real-time forecasts and personalized recommendations you can act on immediately.",
+    icon: <Zap className="w-5 h-5 text-orange" />,
+  },
+  {
+    id: "05",
+    title: "Continous Learning",
+    desc: "The system refines its suggestions based on your unique behavior over time.",
+    icon: <RefreshCw className="w-5 h-5 text-purple" />,
+  },
+  {
+    id: "06",
+    title: "Proactive Protection",
+    desc: "Get intelligent alerts before you overspend, miss a bill, or drift from your goals — so you stay in control, not reactive.",
+    icon: <Ban className="w-5 h-5 text-red-500" />,
   },
 ];
 
@@ -40,10 +51,10 @@ export default function FinanceWorkflow() {
               Operational Framework
             </span>
             <h2 className="mt-2 text-4xl font-light tracking-tight text-text-primary md:text-5xl ">
-              The Intelligence Behind
+              From fragmented data to
               <span className="font-semibold text-text-secondary">
                 {" "}
-                Every Decision
+                automated growth
               </span>
             </h2>
           </div>
@@ -54,7 +65,7 @@ export default function FinanceWorkflow() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-primary border border-border-primary overflow-hidden rounded-xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border-primary border border-border-primary overflow-hidden rounded-xl">
           {steps.map((step) => (
             <div
               key={step.id}
