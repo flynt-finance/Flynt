@@ -274,12 +274,13 @@ export default function InsightsPage() {
               {/* Header */}
               <header className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-white/50 dark:bg-[#0D1131]/80 backdrop-blur-xl">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
                     <Image
                       src={"/favicon.ico"}
                       alt="Flynt"
-                      width={22}
-                      height={22}
+                      width={30}
+                      height={30}
+                      className="rounded-full"
                     />
                   </div>
                   <div>
