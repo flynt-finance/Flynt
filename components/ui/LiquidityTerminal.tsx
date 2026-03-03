@@ -77,7 +77,7 @@ export default function LiquidityTerminal({
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <Wallet className="w-4 h-4 text-emerald-500" />
-            </div>  
+            </div>
             <div>
               <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                 Total Aggregated Liquidity

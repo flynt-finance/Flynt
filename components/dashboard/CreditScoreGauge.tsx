@@ -4,12 +4,14 @@ interface CreditScoreGaugeProps {
   score: number;
   label?: string;
   lastCheck?: string;
+  hideLabels?: boolean;
 }
 
 export default function CreditScoreGauge({
   score,
   label = "Your Financial Health is Average",
   lastCheck = "Last Check on 21 Apr",
+  hideLabels = false,
 }: CreditScoreGaugeProps) {
   return (
     <motion.div
@@ -18,14 +20,17 @@ export default function CreditScoreGauge({
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       {/* Credit Score Gauge */}
-      <div className="relative flex items-center justify-center mb-4">
+      <div
+        className={`relative flex items-center justify-center ${hideLabels ? "" : "mb-4"}`}
+      >
         <motion.svg
-          className="w-48 h-24"
+          className={`${hideLabels ? "w-24 h-12" : "w-48 h-24"}`}
           viewBox="0 0 200 100"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
+          {/* ... paths remain the same ... */}
           {/* Background arc */}
           <motion.path
             d="M 20 90 A 80 80 0 0 1 180 90"
@@ -81,27 +86,33 @@ export default function CreditScoreGauge({
             transition={{ delay: 1, type: "spring", stiffness: 200 }}
           />
         </motion.svg>
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 text-center">
+        <div
+          className={`absolute ${hideLabels ? "top-6" : "top-12"} left-1/2 -translate-x-1/2 text-center`}
+        >
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.5 }}
-            className="text-5xl font-bold text-text-primary"
+            className={`${hideLabels ? "text-2xl" : "text-5xl"} font-bold text-text-primary`}
           >
             {score}
           </motion.div>
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1, duration: 0.4 }}
-        className="text-center"
-      >
-        <p className="text-sm font-semibold text-text-primary mb-1">{label}</p>
-        <p className="text-xs text-text-muted">{lastCheck}</p>
-      </motion.div>
+      {!hideLabels && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1, duration: 0.4 }}
+          className="text-center"
+        >
+          <p className="text-sm font-semibold text-text-primary mb-1">
+            {label}
+          </p>
+          <p className="text-xs text-text-muted">{lastCheck}</p>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

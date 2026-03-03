@@ -2,13 +2,13 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Droplets, 
-  XCircle, 
-  CheckCircle2, 
-  ArrowRight, 
+import {
+  Droplets,
+  XCircle,
+  CheckCircle2,
+  ArrowRight,
   ShieldAlert,
-  ZapOff
+  ZapOff,
 } from "lucide-react";
 
 interface Leak {
@@ -20,26 +20,26 @@ interface Leak {
 }
 
 const initialLeaks: Leak[] = [
-  { 
-    id: "l1", 
-    source: "Bank Charges", 
-    amount: 24500, 
-    reason: "Unauthorized recurring fee from Zenith Bank", 
-    severity: "critical" 
+  {
+    id: "l1",
+    source: "Bank Charges",
+    amount: 24500,
+    reason: "Unauthorized recurring fee from Zenith Bank",
+    severity: "critical",
   },
-  { 
-    id: "l2", 
-    source: "Uber Logic", 
-    amount: 12000, 
-    reason: "Surge pricing anomaly detected", 
-    severity: "moderate" 
+  {
+    id: "l2",
+    source: "Uber Logic",
+    amount: 12000,
+    reason: "Surge pricing anomaly detected",
+    severity: "moderate",
   },
-  { 
-    id: "l3", 
-    source: "Undefined POS Transaction", 
-    amount: 1200, 
-    reason: "Suspicious card charge with no merchant info", 
-    severity: "minor" 
+  {
+    id: "l3",
+    source: "Undefined POS Transaction",
+    amount: 1200,
+    reason: "Suspicious card charge with no merchant info",
+    severity: "minor",
   },
 ];
 
@@ -51,7 +51,7 @@ export default function FinancialLeaksSystem() {
     setPluggingId(id);
     // Simulate smart contract or bank API call to cancel/block
     setTimeout(() => {
-      setLeaks(leaks.filter(l => l.id !== id));
+      setLeaks(leaks.filter((l) => l.id !== id));
       setPluggingId(null);
     }, 1500);
   };
@@ -65,20 +65,23 @@ export default function FinancialLeaksSystem() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Droplets className="w-5 h-5 text-blue-400 animate-pulse" />
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-secondary">Leak Detection System</h3>
-          </div>
-          <div className="px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-[9px] font-mono text-blue-400 uppercase">
-            Status: Active
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-secondary">
+              Leak Detection System
+            </h3>
           </div>
         </div>
-        
+
         <div className="space-y-1">
           <div className="text-3xl  font-bold text-text-secondary dark:text-white tracking-tight">
             ₦{totalLeakage.toLocaleString()}
-            <span className="text-xs text-text-secondary ml-2 font-normal uppercase tracking-tighter">/ monthly leakage</span>
+            <span className="text-xs text-text-secondary ml-2 font-normal uppercase tracking-tighter">
+              / monthly leakage
+            </span>
           </div>
           <p className="text-[10px] text-text-secondary  font-mono italic">
-            {leaks.length > 0 ? `> ${leaks.length} vulnerabilities identified` : "> All leaks successfully plugged"}
+            {leaks.length > 0
+              ? `> ${leaks.length} vulnerabilities identified`
+              : "> All leaks successfully plugged"}
           </p>
         </div>
       </div>
@@ -96,10 +99,15 @@ export default function FinancialLeaksSystem() {
               className="relative group flex items-start justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/2 hover:border-blue-500/30 transition-all"
             >
               <div className="flex gap-3">
-                <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${
-                  leak.severity === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 
-                  leak.severity === 'moderate' ? 'bg-amber-500' : 'bg-slate-400'
-                }`} />
+                <div
+                  className={`mt-1 h-2 w-2 rounded-full shrink-0 ${
+                    leak.severity === "critical"
+                      ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                      : leak.severity === "moderate"
+                        ? "bg-amber-500"
+                        : "bg-slate-400"
+                  }`}
+                />
                 <div>
                   <h4 className="text-sm font-bold text-text-secondary dark:text-white leading-none mb-1">
                     {leak.source}
@@ -117,9 +125,9 @@ export default function FinancialLeaksSystem() {
                 onClick={() => plugLeak(leak.id)}
                 disabled={pluggingId === leak.id}
                 className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-lg border transition-all ${
-                  pluggingId === leak.id 
-                  ? "bg-blue-500 border-blue-500 text-white" 
-                  : "border-slate-200 dark:border-white/10 text-slate-400 hover:border-blue-500 hover:text-blue-500"
+                  pluggingId === leak.id
+                    ? "bg-blue-500 border-blue-500 text-white"
+                    : "border-slate-200 dark:border-white/10 text-slate-400 hover:border-blue-500 hover:text-blue-500"
                 }`}
               >
                 {pluggingId === leak.id ? (
@@ -133,16 +141,20 @@ export default function FinancialLeaksSystem() {
         </AnimatePresence>
 
         {leaks.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center py-12 text-center"
           >
             <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
               <CheckCircle2 className="h-6 w-6 text-emerald-500" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Treasury Secured</h4>
-            <p className="text-xs text-slate-500">No active leaks detected in current fiscal cycle.</p>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Treasury Secured
+            </h4>
+            <p className="text-xs text-slate-500">
+              No active leaks detected in current fiscal cycle.
+            </p>
           </motion.div>
         )}
       </div>
