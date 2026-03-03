@@ -18,47 +18,48 @@ const capabilities = [
     title: "Secure Aggregation",
     desc: "A single, encrypted source of truth for all your accounts — banks, credit cards, loans, and investments.",
     icon: <ShieldAlert className="w-5 h-5" />,
-    status: "Active Scan",
     size: "lg",
   },
   {
     id: "debt",
     title: "Real-Time Monitoring",
-    desc: "Intelligent analysis of your cash flow to deliver personalized, actionable fiscal guidance.",
+    desc: "Stay updated with every transaction as it happens, with instant categorization and alerts.",
     icon: <Layers className="w-5 h-5" />,
-    status: "Logic: Online",
     size: "lg",
   },
   {
-    id: "subscriptions",
-    title: "Leakage Prevention",
-    desc: "Autonomous identification and termination of inefficient recurring drains.",
+    id: "forcasting",
+    title: "AI Forecasting",
+    desc: "Predictive cash-flow analysis to see your future balance and plan with confidence.",
     icon: <Repeat className="w-5 h-5" />,
-    status: "Monitoring",
     size: "md",
   },
   {
     id: "insights",
-    title: "Equity Allocation",
-    desc: "Data-driven stock recommendations aligned with your risk profile and liquid position.",
+    title: "Risk Scoring",
+    desc: "Proactive alerts to identify financial vulnerabilities before they become problems.",
     icon: <TrendingUp className="w-5 h-5" />,
-    status: "Market Sync",
-    size: "md",
+    size: "lg",
   },
   {
-    id: "virtual",
-    title: "Smart Card Governance",
-    desc: "Dynamic spend limits enforced at the point of authorization based on your active budget.",
+    id: "expense",
+    title: "Expense Optimization",
+    desc: "Automatically identify and cancel unused subscriptions to stop money leaks.",
     icon: <CreditCard className="w-5 h-5" />,
-    status: "Secure",
     size: "md",
   },
   {
-    id: "credit",
-    title: "Credit Intelligence",
-    desc: "Seamless monitoring and real-time insights into your institutional creditworthiness.",
+    id: "reallocation",
+    title: "Smart Reallocation",
+    desc: "Guidance on moving idle funds toward savings and investments for maximum growth.",
     icon: <BarChart4 className="w-5 h-5" />,
-    status: "Verified",
+    size: "md",
+  },
+  {
+    id: "planning",
+    title: "Long-Term Planning",
+    desc: "Support for sustainable, multi-year financial health with evolving recommendations",
+    icon: <BarChart4 className="w-5 h-5" />,
     size: "md",
   },
 ];
@@ -105,12 +106,6 @@ export default function CoreCapabilities() {
                 <div className="p-3 bg-bg-primary dark:bg-white/5 rounded text-slate-900 dark:text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
                   {cap.icon}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-text-secondary dark:text-slate-500">
-                    {cap.status}
-                  </span>
-                </div>
               </div>
 
               {/* Card Content */}
@@ -128,34 +123,6 @@ export default function CoreCapabilities() {
               <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-emerald-500/5 blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
             </motion.div>
           ))}
-        </div>
-
-        {/* Network Status Footer */}
-        <div className="mt-16 flex flex-wrap items-center justify-between gap-6 border-t border-slate-100 dark:border-white/5 pt-8">
-          <div className="flex items-center gap-6">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-              Connected Nodes:
-            </span>
-            <div className="flex gap-4 opacity-40 grayscale hover:grayscale-0 transition-all">
-              {/* Small Bank Placeholder Icons */}
-              <div className="text-[10px] font-mono font-bold text-text-secondary dark:text-white border border-slate-200 dark:border-white/10 px-2 py-1 rounded">
-                ZENITH
-              </div>
-              <div className="text-[10px] font-mono font-bold text-text-secondary dark:text-white border border-slate-200 dark:border-white/10 px-2 py-1 rounded">
-                ACCESS
-              </div>
-              <div className="text-[10px] font-mono font-bold text-text-secondary dark:text-white border border-slate-200 dark:border-white/10 px-2 py-1 rounded">
-                GTB
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-emerald-500 uppercase tracking-[0.2em]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Real-time Synchronization Active
-          </div>
         </div>
       </div>
     </section>
