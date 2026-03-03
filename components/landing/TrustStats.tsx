@@ -239,9 +239,9 @@ export default function TrustStats() {
                   </div>
 
                   <h2 className="text-4xl font-medium tracking-tight text-text-secondary dark:text-white md:text-5xl leading-tight">
-                    Deploy the{" "}
+                    Join the{" "}
                     <span className="text-emerald-400 font-serif italic">
-                      Flynt Protocol.
+                      Flynt Waitlist.
                     </span>
                   </h2>
 
