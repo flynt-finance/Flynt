@@ -90,7 +90,7 @@ export default function ProductPreview() {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 relative z-10">
+      <div className="container mx-auto max-w-7xl px-1 relative z-10">
         {/* ── SECTION HEADER ─────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

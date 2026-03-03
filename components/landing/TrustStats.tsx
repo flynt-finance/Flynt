@@ -217,7 +217,7 @@ export default function TrustStats() {
       {/* Top divider */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent" />
 
-      <div className="container mx-auto max-w-6xl px-6">
+      <div className="container mx-auto max-w-6xl px-1">
         {/* ── CTA CARD ─────────────────────────────────────────────────── */}
         <div className="relative group">
           {/* Glow ring */}
@@ -359,7 +359,7 @@ export default function TrustStats() {
                             <button
                               type="button"
                               onClick={handleNextStep}
-                              className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 text-[11px] font-black uppercase tracking-[0.15em] text-white transition-all hover:bg-emerald-400 active:scale-[0.98]"
+                              className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-1 py-3 text-[11px] font-black uppercase tracking-[0.15em] text-white transition-all hover:bg-emerald-400 active:scale-[0.98]"
                             >
                               Continue
                               <ArrowRight className="w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ export default function TrustStats() {
                               <button
                                 type="submit"
                                 disabled={status === "loading"}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 text-[11px] font-black uppercase tracking-[0.15em] text-white transition-all hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-1 py-3 text-[11px] font-black uppercase tracking-[0.15em] text-white transition-all hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                               >
                                 {status === "loading" ? (
                                   <>

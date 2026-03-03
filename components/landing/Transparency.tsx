@@ -55,14 +55,14 @@ export default function Transparency() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/5 blur-3xl" />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 relative z-10">
+      <div className="container mx-auto max-w-7xl px-1 relative z-10">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="mb-20 max-w-2xl"
+          className="mb-20 max-w-2xl px-3"
         >
           <div className="flex items-center gap-2 mb-4">
             <span className="h-px w-8 bg-emerald-500" />

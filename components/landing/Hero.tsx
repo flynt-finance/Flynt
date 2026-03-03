@@ -16,7 +16,7 @@ import Image from "next/image";
 export default function FlyntHero() {
   return (
     <section className="relative isolate overflow-hidden  py-24 lg:py-32 transition-colors duration-500">
-      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-1 lg:px-8">
         <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
           {/* LEFT — STRATEGIC CONTENT */}
           <div>

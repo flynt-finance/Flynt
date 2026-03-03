@@ -67,7 +67,7 @@ const capabilities = [
 export default function CoreCapabilities() {
   return (
     <section className="bg-bg-primary dark:bg-[#0A0D27] py-24 lg:py-32">
-      <div className="container mx-auto max-w-7xl px-6">
+      <div className="container mx-auto max-w-7xl px-1">
         {/* Section Header */}
         <div className="mb-20 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="max-w-2xl">
