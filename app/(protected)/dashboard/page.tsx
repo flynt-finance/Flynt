@@ -231,7 +231,7 @@ export default function DashboardPage() {
 
         {/* Right: Flynt Intelligence Hub */}
         <div className="lg:col-span-5">
-          <FlyntInsights />
+          <FlyntInsights onAddDebt={() => setShowDebtModal(true)} />
         </div>
       </div>
 

@@ -1,309 +1,386 @@
 "use client";
 
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  BrainCircuit,
   Sparkles,
-  TrendingUp,
-  Zap,
-  ShieldCheck,
   ArrowUpRight,
-  Clock,
-  MoreHorizontal,
+  Send,
+  MessageSquare,
   X,
+  User,
 } from "lucide-react";
+import Image from "next/image";
 
-// Mock Data Extensions
-const SUMMARY_STATS = [
+/* -----------------------------
+   Types
+------------------------------ */
+
+interface Message {
+  id: string;
+  sender: "sophia" | "user";
+  text?: string;
+  type: "text" | "insight";
+  timestamp: Date;
+  insightData?: {
+    type: "warning" | "optimization" | "market" | "savings";
+    title: string;
+    description: string;
+    actionText: string;
+    logo?: string;
+  };
+}
+
+/* -----------------------------
+   Mock Data
+------------------------------ */
+
+const INITIAL_MESSAGES: Message[] = [
   {
-    label: "Active Nodes",
-    value: "05",
-    sub: "Unread",
-    icon: BrainCircuit,
-    color: "text-blue-500",
+    id: "1",
+    sender: "sophia",
+    type: "text",
+    text: "Hello. I've analyzed your February financial activity.",
+    timestamp: new Date(),
   },
   {
-    label: "Projected Delta",
-    value: "₦16k",
-    sub: "Potential",
-    icon: Zap,
-    color: "text-emerald-500",
+    id: "2",
+    sender: "sophia",
+    type: "insight",
+    timestamp: new Date(),
+    insightData: {
+      type: "savings",
+      title: "Save ₦15,000 on DSTV",
+      description:
+        "Pause DSTV Premium during international breaks and save ₦15,000.",
+      actionText: "Pause Subscription",
+      logo: "/dstv.png",
+    },
   },
   {
-    label: "Model Integrity",
-    value: "86%",
-    sub: "Accuracy",
-    icon: ShieldCheck,
-    color: "text-purple-500",
-  },
-  {
-    label: "Fiscal Pulse",
-    value: "92/100",
-    sub: "Health",
-    icon: Sparkles,
-    color: "text-orange-500",
+    id: "3",
+    sender: "sophia",
+    type: "insight",
+    timestamp: new Date(),
+    insightData: {
+      type: "market",
+      title: "Dangote Refinery IPO Opportunity",
+      description:
+        "Analysts suggest this IPO could be the strongest buy of Q2.",
+      actionText: "Monitor Stock",
+      logo: "/dangote.webp",
+    },
   },
 ];
 
+/* -----------------------------
+   Page
+------------------------------ */
+
 export default function InsightsPage() {
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [isSophiaOpen, setIsSophiaOpen] = useState(true);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: "user",
+      type: "text",
+      text: inputText,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const userText = inputText.toLowerCase();
+    setInputText("");
+
+    // Start simulation
+    setIsTyping(true);
+
+    // Simulate typing delay
+    setTimeout(() => {
+      let sophiaResponse: Message;
+
+      /* ---------------- Spending Analysis ---------------- */
+      if (userText.includes("analyze") || userText.includes("spending")) {
+        sophiaResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: "sophia",
+          type: "text",
+          text:
+            "Here’s your February breakdown:\n\n" +
+            "• Food & Dining — 38%\n" +
+            "• Subscriptions — 21%\n" +
+            "• Transportation — 17%\n" +
+            "• Utilities — 9%\n" +
+            "• Miscellaneous — 15%\n\n" +
+            "Your highest anomaly: subscription stacking.\n" +
+            "You currently maintain 6 recurring services. Two show low utilization.\n\n" +
+            "Would you like recommendations on which to pause?",
+          timestamp: new Date(),
+        };
+      } else if (userText.includes("budget")) {
+        /* ---------------- Budget Check ---------------- */
+        sophiaResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: "sophia",
+          type: "text",
+          text:
+            "Current Budget Health: 72% stable.\n\n" +
+            "⚠ Food & Dining is trending above projection.\n" +
+            "At this pace, you will exceed allocation by ₦42,300.\n\n" +
+            "Recommendation:\n" +
+            "• Shift ₦25,000 from Miscellaneous\n" +
+            "OR\n" +
+            "• Enable soft-limit alerts.\n\n" +
+            "Would you like proactive protection activated?",
+          timestamp: new Date(),
+        };
+      } else if (userText.includes("savings")) {
+        /* ---------------- Savings Advice ---------------- */
+        sophiaResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: "sophia",
+          type: "text",
+          text:
+            "Liquidity optimization detected.\n\n" +
+            "Recommended pauses this month:\n" +
+            "• DSTV Premium — Save ₦15,000\n" +
+            "• Apple Music Family — Save ₦6,800\n\n" +
+            "Total potential liquidity gain: ₦21,800.\n\n" +
+            "Would you like automated suspension enabled?",
+          timestamp: new Date(),
+        };
+      } else if (userText.includes("ipo") || userText.includes("stock")) {
+        /* ---------------- IPO Updates ---------------- */
+        sophiaResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: "sophia",
+          type: "text",
+          text:
+            "Tracking live opportunities:\n\n" +
+            "• Dangote Refinery IPO — Institutional sentiment: Positive\n" +
+            "• MTN Infrastructure Bond — Stable yield\n" +
+            "• Nigerian Treasury Bills — Yield contraction expected\n\n" +
+            "Would you like real-time refinery expansion alerts?",
+          timestamp: new Date(),
+        };
+      } else {
+        /* ---------------- Default Smart Response ---------------- */
+        sophiaResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: "sophia",
+          type: "text",
+          text:
+            "I'm analyzing that request.\n\n" +
+            "Please specify if you'd like assistance with:\n" +
+            "• Spending analysis\n" +
+            "• Budget health\n" +
+            "• Savings optimization\n" +
+            "• Investment monitoring\n\n" +
+            "I'm ready when you are.",
+          timestamp: new Date(),
+        };
+      }
+
+      setMessages((prev) => [...prev, sophiaResponse]);
+      setIsTyping(false);
+    }, 1500); // Increased slightly for more "thoughtful" simulation
+  };
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
+  const insights = messages.filter(
+    (m) => m.type === "insight" && m.insightData,
+  );
+
   return (
-    <div className="max-w-7xl mx-auto space-y-10 p-6 pb-24 dark:text-white">
-      {/* Dynamic Intelligence Header */}
-      <header className="flex flex-col md:flex-row justify-between gap-6 items-start">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Live Prediction Engine
-            </span>
+    <div className="flex h-[calc(100vh-120px)] max-w-7xl mx-auto gap-6">
+      {/* ---------------- LEFT: INSIGHTS STACK ---------------- */}
+
+      <div className="w-[380px] shrink-0 flex flex-col">
+        <div className="bg-white dark:bg-[#0A0D27]/40 border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-xl p-6 flex flex-col h-full">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-black">Insights</h3>
+            <Image
+              src={"/favicon.ico"}
+              alt="Flynt Logo"
+              width={28}
+              height={28}
+              className="rounded-full"
+            />
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-text-secondary dark:text-white">
-            Financial Intelligence
-          </h1>
-          <p className="text-slate-500 text-sm">
-            Real-time heuristics and predictive spending trajectories.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 bg-bg-secondary dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10">
-          {["Overview", "Forecasts", "Strategy"].map((tab) => (
-            <button
-              key={tab}
-              className={`px-4 py-2 rounded-xl text-xs text-text-primary font-bold transition-all ${tab === "Overview" ? "bg-bg-primary dark:bg-white/10 shadow-sm" : "text-text-secondary hover:text-text-primary dark:hover:text-white hover:bg-bg-elevated dark:hover:bg-white/5"}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </header>
+          <div className="space-y-4 overflow-y-auto pr-2">
+            {insights.map((msg) => (
+              <motion.div
+                key={msg.id}
+                whileHover={{ y: -3 }}
+                className="p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0D1131] shadow-sm hover:shadow-lg transition-all"
+              >
+                <div className="flex gap-4">
+                  {msg.insightData?.logo && (
+                    <div className="h-11 w-11 relative rounded-xl overflow-hidden bg-white border border-slate-100 dark:border-white/10">
+                      <Image
+                        src={msg.insightData.logo}
+                        alt={msg.insightData.title}
+                        fill
+                        className="object-contain p-1"
+                      />
+                    </div>
+                  )}
 
-      {/* Hero Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {SUMMARY_STATS.map((stat, i) => (
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold">
+                      {msg.insightData?.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {msg.insightData?.description}
+                    </p>
+                  </div>
+                </div>
+
+                <button className="mt-5 w-full text-xs font-bold bg-emerald-600 text-white py-2.5 rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                  {msg.insightData?.actionText}
+                  <ArrowUpRight size={14} />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- RIGHT: SOPHIA PANEL ---------------- */}
+
+      <AnimatePresence>
+        {isSophiaOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            key={stat.label}
-            className="bg-bg-secondary dark:bg-[#0D1131] border border-slate-200 dark:border-white/5 p-5 rounded-xl relative overflow-hidden group"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "100%", opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 overflow-hidden"
           >
-            <stat.icon size={18} className={`${stat.color} mb-3`} />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary dark:text-slate-400">
-              {stat.label}
-            </p>
-            <p className="text-2xl font-mono font-bold mt-1 text-text-secondary ">{stat.value}</p>
-            <span className="text-[10px] font-medium text-text-secondary">
-              {stat.sub}
-            </span>
+            <div className="flex flex-col h-full bg-white dark:bg-[#0A0D27]/40 border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden">
+              {/* Header */}
+              <header className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-white/50 dark:bg-[#0D1131]/80 backdrop-blur-xl">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <Image
+                      src={"/favicon.ico"}
+                      alt="Flynt"
+                      width={22}
+                      height={22}
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black">Sophia</h2>
+                    <p className="text-xs text-slate-500">
+                      Flynt Intelligence Hub • Active
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsSophiaOpen(false)}
+                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </header>
+
+              {/* Chat */}
+              <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto p-6 space-y-6"
+              >
+                {messages
+                  .filter((m) => m.type === "text")
+                  .map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${
+                        msg.sender === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[75%] p-4 rounded-2xl text-sm ${
+                          msg.sender === "user"
+                            ? "bg-emerald-600 text-white rounded-tr-none"
+                            : "bg-white dark:bg-[#0D1131] border border-slate-200 dark:border-white/10 rounded-tl-none font-medium"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+
+                {/* Sophia is Typing Indicator - Outside the loop */}
+                <AnimatePresence>
+                  {isTyping && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                      className="flex justify-start"
+                    >
+                      <div className="bg-white dark:bg-[#0D1131] border border-slate-200 dark:border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1.5 shadow-sm">
+                        <span className="h-2 w-2 bg-emerald-500/60 rounded-full animate-bounce" />
+                        <span className="h-2 w-2 bg-emerald-500/80 rounded-full animate-bounce [animation-delay:-0.2s]" />
+                        <span className="h-2 w-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.4s]" />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Input */}
+              <footer className="p-6 border-t border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0D1131]/80 backdrop-blur-xl">
+                <div className="relative">
+                  <input
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    placeholder="Message Sophia..."
+                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-6 py-4 pr-14 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40"
+                  />
+                  <button
+                    onClick={handleSend}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </footer>
+            </div>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Predictions */}
-        <div className="lg:col-span-2 space-y-8">
-          <section className="bg-bg-secondary dark:bg-[#0D1131] border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold flex items-center gap-2 text-text-secondary">
-                <TrendingUp className="text-text-secondary" /> Spending
-                Trajectories
-              </h2>
-              <div className="text-[10px] font-bold bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full uppercase tracking-widest">
-                EOM Projection
-              </div>
-            </div>
-
-            <div className="space-y-10">
-              <PredictionItem
-                category="Food & Dining"
-                current={12450}
-                predicted={18500}
-                budget={20000}
-                confidence={85}
-                status="on-track"
-              />
-              <PredictionItem
-                category="Logistics"
-                current={8500}
-                predicted={11200}
-                budget={8000}
-                confidence={72}
-                status="warning"
-              />
-            </div>
-          </section>
-
-          {/* Neural Feed (Insights) */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500 ml-4">
-              System Alerts
-            </h2>
-            <InsightCard
-              type="warning"
-              title="Budget Exhaustion Imminent"
-              message="At current velocity, your Food budget will reach 100% in 4.2 days."
-              cta="Audit Expenses"
-            />
-            <InsightCard
-              type="info"
-              title="Subscription Audit"
-              message="Detected 3 recurring charges. Potential ghost-subscription detected: 'Netflix Premium'."
-              cta="Resolve"
-            />
-          </div>
-        </div>
-
-        {/* Right Column: AI Strategy */}
-        <aside className="space-y-6 text-text-secondary">
-          <div className="bg-bg-secondary dark:bg-[#0D1131] rounded-[2.5rem] p-8 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center">
-                  <Sparkles size={20} className="text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-text-secondary">Flynt Strategy</h3>
-                  <p className="text-[10px] text-emerald-400 font-bold uppercase">
-                    Optimized for Feb 2026
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Your savings velocity is currently **8% above benchmark**.
-                Clearing two minor debt notes could unlock a **₦12,500** monthly
-                cashflow surplus.
-              </p>
-
-              <div className="space-y-3">
-                <StrategyTask text="Switch to weekly meal prep" saving="₦12k" />
-                <StrategyTask text="Review transport routing" saving="₦4k" />
-              </div>
-            </div>
-            <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-emerald-500/10 blur-[80px]" />
-          </div>
-
-          <div className="p-8 rounded-[2.5rem] bg-bg-secondary dark:bg-[#0D1131] border border-slate-200 dark:border-white/5">
-            <h4 className="font-bold mb-4">Historical Accuracy</h4>
-            {/* Simple sparkline visual representation */}
-            <div className="flex items-end gap-1 h-12 mb-2">
-              {[40, 70, 45, 90, 65, 80, 86].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-emerald-500/20 rounded-t-sm"
-                  style={{ height: `${h}%` }}
-                />
-              ))}
-            </div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">
-              System Reliability: 99.4% Uptime
-            </p>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function PredictionItem({
-  category,
-  current,
-  predicted,
-  budget,
-  confidence,
-  status,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-}: any) {
-  const isOver = predicted > budget;
-  return (
-    <div className="group">
-      <div className="flex justify-between items-end mb-4 text-text-secondary">
-        <div>
-          <h4 className="font-bold text-lg text-text-secondary">{category}</h4>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-slate-400">
-            <Clock size={12} /> {confidence}% Prediction Confidence
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-xl font-mono font-bold">
-            ₦{predicted.toLocaleString()}
-          </p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Limit: ₦{budget.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      <div className="relative h-3 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-2">
-        <div
-          className="h-full bg-bg-primary dark:bg-white/20"
-          style={{ width: `${(current / budget) * 100}%` }}
-        />
-        <div
-          className={`absolute top-0 h-full border-l-2 border-dashed border-white dark:border-slate-900 ${isOver ? "bg-red-500" : "bg-emerald-500"}`}
-          style={{
-            left: `${(current / budget) * 100}%`,
-            width: `${((predicted - current) / budget) * 100}%`,
-          }}
-        />
-      </div>
-      <div className="flex justify-between text-[10px] font-bold uppercase">
-        <span className="text-slate-400">
-          Consumed: ₦{current.toLocaleString()}
-        </span>
-        <span className={isOver ? "text-red-500" : "text-emerald-500"}>
-          {isOver ? "Critical Breach Projected" : "Within Threshold"}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-interface InsightCardProps {
-  type: "warning" | "info";
-  title: string;
-  message: string;
-  cta: string;
-}
-
-function InsightCard({ type, title, message, cta }: InsightCardProps) {
-  return (
-    <div
-      className={`p-6 rounded-3xl text-text-secondary border ${type === "warning" ? "bg-red-500/5 border-red-500/20" : "bg-blue-500/5 border-blue-500/20"} flex gap-4 items-start`}
-    >
-      <div
-        className={`p-2 rounded-xl ${type === "warning" ? "bg-red-500/20 text-red-500" : "bg-blue-500/20 text-blue-500"}`}
-      >
-        {type === "warning" ? <Zap size={18} /> : <BrainCircuit size={18} />}
-      </div>
-      <div className="flex-1">
-        <div className="flex justify-between items-start">
-          <h4 className="font-bold text-sm mb-1">{title}</h4>
-          <button className="text-slate-400 hover:text-slate-900">
-            <X size={14} />
-          </button>
-        </div>
-        <p className="text-xs text-text-secondary leading-relaxed mb-4">{message}</p>
-        <button className="flex text-text-secondary items-center gap-1 text-[10px] font-bold uppercase tracking-widest  dark:text-white hover:gap-2 transition-all">
-          {cta} <ArrowUpRight size={12} />
+      {/* Floating Button when closed */}
+      {!isSophiaOpen && (
+        <button
+          onClick={() => setIsSophiaOpen(true)}
+          className="fixed bottom-10 right-10 h-14 w-14 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center justify-center"
+        >
+          <Image
+            src={"/favicon.ico"}
+            alt="Flynt Logo"
+            width={28}
+            height={28}
+            className="rounded-full"
+          />
         </button>
-      </div>
-    </div>
-  );
-}
-
-interface StrategyTaskProps {
-  text: string;
-  saving: string;
-}
-
-function StrategyTask({ text, saving }: StrategyTaskProps) {
-  return (
-    <div className="flex items-center text-text-secondary justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all cursor-pointer">
-      <span className="text-xs font-medium">{text}</span>
-      <span className="text-[10px] font-mono font-bold text-emerald-400">
-        +{saving}
-      </span>
+      )}
     </div>
   );
 }

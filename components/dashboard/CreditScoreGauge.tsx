@@ -30,7 +30,6 @@ export default function CreditScoreGauge({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          {/* ... paths remain the same ... */}
           {/* Background arc */}
           <motion.path
             d="M 20 90 A 80 80 0 0 1 180 90"

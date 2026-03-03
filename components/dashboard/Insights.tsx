@@ -8,8 +8,11 @@ import {
   TrendingDown,
   ArrowUpRight,
   Sparkles,
+  ShieldAlert,
+  Calendar,
 } from "lucide-react";
 import Image from "next/image";
+import { useDebts, Debt } from "@/contexts/DebtContext";
 
 interface InsightItem {
   id: string;
@@ -18,16 +21,18 @@ interface InsightItem {
     | "warning"
     | "positive"
     | "market-alert"
-    | "savings-advice";
+    | "savings-advice"
+    | "debt-advisor";
   title: string;
   description: string;
   actionText?: string;
   actionLink?: string;
   ctaType?: "primary" | "secondary";
   logo?: string;
+  isDebtAction?: boolean;
 }
 
-const insights: InsightItem[] = [
+const staticInsights: InsightItem[] = [
   {
     id: "dstv-save",
     type: "savings-advice",
@@ -58,19 +63,77 @@ const insights: InsightItem[] = [
     ctaType: "primary",
     logo: "/mtn.png",
   },
-  {
-    id: "1",
-    type: "optimization",
-    title: "Save ₦5,840/month",
-    description:
-      "We found 2 subscriptions you might not be using. Canceling them could save you money each month.",
-    actionText: "Take action",
-  },
 ];
 
-export default function FlyntInsights() {
+interface FlyntInsightsProps {
+  onAddDebt?: () => void;
+}
+
+export default function FlyntInsights({ onAddDebt }: FlyntInsightsProps) {
+  const { debts } = useDebts();
+
+  const getDebtAdvice = (): InsightItem | null => {
+    if (debts.length === 0) {
+      return {
+        id: "setup-debt",
+        type: "optimization",
+        title: "Setup Debt Tracking",
+        description:
+          "Take control of your liabilities. Add your debt notes to get AI-powered repayment strategies.",
+        actionText: "Create Debt Note",
+        ctaType: "primary",
+        isDebtAction: true,
+      };
+    }
+
+    // Find the most pressing debt
+    // Priority: Critical importance first, then high, then closest deadline
+    const sortedDebts = [...debts].sort((a, b) => {
+      const importanceMap = { critical: 3, high: 2, medium: 1, low: 0 };
+      if (importanceMap[a.importance] !== importanceMap[b.importance]) {
+        return importanceMap[b.importance] - importanceMap[a.importance];
+      }
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    });
+
+    const topDebt = sortedDebts[0];
+    const today = new Date();
+    const deadline = new Date(topDebt.deadline);
+    const diffDays = Math.ceil(
+      (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    let priorityReason = "";
+    if (topDebt.importance === "critical") priorityReason = "Critical Priority";
+    else if (diffDays <= 3) priorityReason = "Approaching Deadline";
+    else priorityReason = "High Impact";
+
+    return {
+      id: `debt-advice-${topDebt.id}`,
+      type: "debt-advisor",
+      title: `Priority: ${topDebt.name}`,
+      description: `Flynt AI suggests tackling this first: ${topDebt.rationale} (${priorityReason})`,
+      actionText: "View Debt Details",
+      ctaType: "primary",
+      actionLink: "/dashboard/debts",
+    };
+  };
+
+  const debtInsight = getDebtAdvice();
+  const allInsights = debtInsight
+    ? [debtInsight, ...staticInsights]
+    : staticInsights;
+
   const getStyles = (type: InsightItem["type"]) => {
     switch (type) {
+      case "debt-advisor":
+        return {
+          bg: "bg-indigo-50/50 dark:bg-indigo-500/10",
+          border: "border-indigo-100 dark:border-indigo-500/30",
+          iconBg: "bg-indigo-100 dark:bg-indigo-500/30",
+          iconColor: "text-indigo-600 dark:text-indigo-400",
+          icon: <ShieldAlert className="w-4 h-4" />,
+        };
       case "savings-advice":
         return {
           bg: "bg-green-50/50 dark:bg-green-500/10",
@@ -162,21 +225,28 @@ export default function FlyntInsights() {
             />
           </motion.div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-text-secondary dark:text-white uppercase leading-none">
+            <h2 className="text-lg font-bold tracking-tight text-text-secondary dark:text-white uppercase leading-none">
               Flynt Intelligence
-            </h3>
+            </h2>
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">
-              {insights.length} active opportunities
+              {allInsights.length} active opportunities
             </p>
           </div>
         </div>
+        <button
+          onClick={onAddDebt}
+          className="flex h-8 items-center gap-1.5 px-3 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors uppercase tracking-wider"
+        >
+          <Calendar className="w-3 h-3" />
+          Debt Note
+        </button>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {/* Insight List */}
         <div className="space-y-4 pb-4">
-          {insights.map((item) => {
+          {allInsights.map((item) => {
             const styles = getStyles(item.type);
             return (
               <motion.div
@@ -200,22 +270,23 @@ export default function FlyntInsights() {
                         className="object-contain rounded-full"
                       />
                     ) : (
-                      <Image
-                        src={"/favicon.ico"}
-                        alt="Flynt Logo"
-                        width={28}
-                        height={28}
-                        className="rounded-full"
-                      />
+                      <div className={`${styles.iconColor}`}>{styles.icon}</div>
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1">
                     {/* Title */}
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-white tracking-tight">
-                      {item.title}
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-slate-800 dark:text-white tracking-tight">
+                        {item.title}
+                      </h4>
+                      {item.type === "debt-advisor" && (
+                        <span className="text-[8px] font-black uppercase tracking-widest bg-indigo-500 text-white px-1.5 py-0.5 rounded shadow-sm">
+                          AI Advice
+                        </span>
+                      )}
+                    </div>
 
                     {/* Description */}
                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
@@ -226,10 +297,19 @@ export default function FlyntInsights() {
                     {item.actionText && (
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-[10px] uppercase tracking-widest text-slate-400">
-                          Suggested Action
+                          {item.type === "debt-advisor"
+                            ? "AI Repayment Strategy"
+                            : "Suggested Action"}
                         </span>
 
                         <button
+                          onClick={() => {
+                            if (item.isDebtAction && onAddDebt) {
+                              onAddDebt();
+                            } else if (item.actionLink) {
+                              window.location.href = item.actionLink;
+                            }
+                          }}
                           className={`group/btn inline-flex items-center gap-1 text-xs font-semibold transition-all
               ${
                 item.ctaType === "primary"
