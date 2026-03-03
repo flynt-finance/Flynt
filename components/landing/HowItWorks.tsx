@@ -43,7 +43,7 @@ const steps = [
 
 export default function FinanceWorkflow() {
   return (
-    <section className="py-24 text-text-primary">
+    <section className="py-3 md:py-24 text-text-primary">
       <div className="container mx-auto max-w-7xl px-1">
         <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
