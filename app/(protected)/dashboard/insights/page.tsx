@@ -207,7 +207,7 @@ export default function InsightsPage() {
     <div className="flex h-[calc(100vh-120px)] max-w-7xl mx-auto gap-6">
       {/* ---------------- LEFT: INSIGHTS STACK ---------------- */}
 
-      <div className="w-[380px] shrink-0 flex flex-col">
+      <div className="w-[480px] shrink-0 flex flex-col">
         <div className="bg-white dark:bg-[#0A0D27]/40 border border-slate-200 dark:border-white/5 rounded-[2rem] shadow-xl p-6 flex flex-col h-full">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-black">Insights</h3>
@@ -229,12 +229,12 @@ export default function InsightsPage() {
               >
                 <div className="flex gap-4">
                   {msg.insightData?.logo && (
-                    <div className="h-11 w-11 relative rounded-xl overflow-hidden bg-white border border-slate-100 dark:border-white/10">
+                    <div className="h-11 w-11 relative rounded-full overflow-hidden bg-white border border-slate-100 dark:border-white/10">
                       <Image
                         src={msg.insightData.logo}
                         alt={msg.insightData.title}
                         fill
-                        className="object-contain p-1"
+                        className="object-contain p-1 rounded-full"
                       />
                     </div>
                   )}
@@ -274,15 +274,40 @@ export default function InsightsPage() {
               {/* Header */}
               <header className="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-white/50 dark:bg-[#0D1131]/80 backdrop-blur-xl">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <motion.div
+                    className="relative flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20"
+                    animate={{
+                      scale: [1, 1.08, 1],
+                    }}
+                    transition={{
+                      duration: 1.8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    {/* Outer Pulse Ring */}
+                    <motion.span
+                      className="absolute inset-0 rounded-full border-2 border-emerald-400/40"
+                      animate={{
+                        scale: [1, 1.6],
+                        opacity: [0.5, 0],
+                      }}
+                      transition={{
+                        duration: 1.8,
+                        repeat: Infinity,
+                        ease: "easeOut",
+                      }}
+                    />
+
+                    {/* Logo */}
                     <Image
                       src={"/favicon.ico"}
-                      alt="Flynt"
-                      width={30}
-                      height={30}
+                      alt="Flynt Logo"
+                      width={28}
+                      height={28}
                       className="rounded-full"
                     />
-                  </div>
+                  </motion.div>
                   <div>
                     <h2 className="text-lg font-black">Sophia</h2>
                     <p className="text-xs text-slate-500">
@@ -314,7 +339,7 @@ export default function InsightsPage() {
                       }`}
                     >
                       <div
-                        className={`max-w-[75%] p-4 rounded-2xl text-sm ${
+                        className={`max-w-[65%] p-4 rounded-2xl text-sm ${
                           msg.sender === "user"
                             ? "bg-emerald-600 text-white rounded-tr-none"
                             : "bg-white dark:bg-[#0D1131] border border-slate-200 dark:border-white/10 rounded-tl-none font-medium"

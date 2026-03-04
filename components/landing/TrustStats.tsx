@@ -332,7 +332,7 @@ export default function TrustStats() {
                             <InputField
                               id="fullName"
                               label="Full name"
-                              placeholder="Ada Okonkwo"
+                              placeholder="Jane Doe"
                               value={form.fullName}
                               onChange={(e) => set("fullName")(e.target.value)}
                               error={errors.fullName}
@@ -341,7 +341,7 @@ export default function TrustStats() {
                               id="email"
                               label="Email"
                               type="email"
-                              placeholder="ada@example.com"
+                              placeholder="name@example.com"
                               value={form.email}
                               onChange={(e) => set("email")(e.target.value)}
                               error={errors.email}
