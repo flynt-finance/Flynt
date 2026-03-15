@@ -48,7 +48,7 @@ import type {
   LeaksApiResponse,
   GovernanceSummaryApiResponse,
   GovernanceAllocationsPayload,
-  CreditScoreApiResponse,
+  CreditScoreData,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -93,6 +93,17 @@ export function useLiquidityQuery() {
   return useCustomFetchQuery<LiquidityApiResponse>(
     "/banking/liquidity?sync=true",
     { queryKey: [LIQUIDITY_QUERY_KEY] }
+  );
+}
+
+/** Credit score query key for invalidations */
+export const CREDIT_SCORE_QUERY_KEY = "intelligence/credit-score";
+
+/** GET /intelligence/credit-score - returns ApiResponse with data as inner payload */
+export function useCreditScoreQuery() {
+  return useCustomFetchQuery<CreditScoreData>(
+    "/intelligence/credit-score",
+    { queryKey: [CREDIT_SCORE_QUERY_KEY] }
   );
 }
 

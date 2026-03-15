@@ -11,7 +11,7 @@ import { ConnectBankSecureModal, ConfirmModal } from "@/components/modal";
 import {
 	CategoryCard,
 	TransactionItem,
-	CreditScoreGauge,
+	CreditHealthSection,
 	CreateDebtModal,
 	AccountBreakdownModal,
 	TransactionDetailModal,
@@ -306,7 +306,7 @@ export default function DashboardPage() {
 				<div className="lg:col-span-12 grid gap-6 md:grid-cols-2">
 					<button
 						onClick={() => setShowConnectBankModal(true)}
-						className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-primary/5 border-2 border-dashed border-slate-200 dark:border-white/10 text-text-secondary hover:border-green-primary hover:text-green-primary transition-all group h-32"
+						className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-primary/5 border-2 border-dashed border-slate-200 dark:border-white/10 text-text-secondary hover:border-green-primary hover:text-green-primary transition-all group h-32 cursor-pointer"
 					>
 						<div className="h-12 w-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center group-hover:bg-green-primary/10 transition-colors shadow-sm">
 							<svg
@@ -333,19 +333,7 @@ export default function DashboardPage() {
 						</div>
 					</button>
 
-					<Card className="h-32 px-6 flex items-center gap-6">
-						<div className="w-24 shrink-0">
-							<CreditScoreGauge score={660} hideLabels />
-						</div>
-						<div>
-							<h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">
-								Credit Health
-							</h3>
-							<p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter leading-tight">
-								Verified by Nigerian <br /> Credit Bureau
-							</p>
-						</div>
-					</Card>
+					<CreditHealthSection />
 				</div>
 
 				{/* Intelligence & Liquidity Layer */}
