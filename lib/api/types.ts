@@ -226,6 +226,17 @@ export interface LinkedAccount {
 /** GET /banking/linked-accounts response */
 export type LinkedAccountsApiResponse = TypeApiResponse<LinkedAccount[]>
 
+/** POST /banking/link payload */
+export interface LinkBankPayload {
+  monoCode: string
+}
+
+/** POST /banking/link response */
+export type LinkBankApiResponse = TypeApiResponse<LinkedAccount>
+
+/** DELETE /banking/linked-accounts/:id response */
+export type UnlinkBankApiResponse = TypeApiResponse<{ success: boolean }>
+
 export interface OnboardingCompleteResponseData {
   profile: OnboardingProfile
   linkedAccounts: LinkedAccount[]

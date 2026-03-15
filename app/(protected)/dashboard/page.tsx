@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import Connect from "@mono.co/connect.js";
 import InvestmentInsightsModal from "@/components/InvestmentInsightsModal";
 import { Card, Input } from "@/components/ui";
-import AddCardModal from "@/components/modal/AddCardModal";
-import useSync from "../../(auth)/flynt/hooks/useSync";
-import SyncAnimation from "../../(auth)/flynt/components/SyncAnimation";
+import { ConnectBankSecureModal, ConfirmModal } from "@/components/modal";
 import {
 	CategoryCard,
 	TransactionItem,
@@ -26,9 +26,14 @@ import FinancialLeaksSystem from "@/components/dashboard/FinancialLeak";
 import {
 	useLinkedAccountsQuery,
 	LINKED_ACCOUNTS_QUERY_KEY,
+	linkBankRequest,
+	unlinkBankAccountRequest,
 } from "@/lib/api/requests";
 import type { LinkedAccountsApiResponse } from "@/lib/api/types";
 import { useNigerianBanks } from "@/lib/banks/nigerian-banks";
+import { useAuthStore } from "@/stores/use-auth-store";
+import { useGlobalLoader } from "@/contexts/GlobalLoaderContext";
+import { showErrorToast } from "@/lib/api/client";
 
 /** Extract last 4 digits from masked account number (e.g. "******3461" -> "3461") */
 const getLastFourFromAccountNumber = (accountNumber: string): string => {
@@ -39,48 +44,144 @@ const getLastFourFromAccountNumber = (accountNumber: string): string => {
 
 export default function DashboardPage() {
 	const queryClient = useQueryClient();
+	const user = useAuthStore((s) => s.user);
+	const { showLoader, hideLoader } = useGlobalLoader();
 	const { debts, deleteDebt } = useDebts();
-	const { startSynchronization, isSyncing } = useSync();
 	const { data: linkedAccountsResponse, isLoading: isLinkedAccountsLoading } =
 		useLinkedAccountsQuery();
 	const { getBankLogoUrl } = useNigerianBanks();
 
 	const [showInvestmentModal, setShowInvestmentModal] = useState(false);
 	const [showDebtModal, setShowDebtModal] = useState(false);
-	const [showConnectCardModal, setShowConnectCardModal] = useState(false);
+	const [showConnectBankModal, setShowConnectBankModal] = useState(false);
 	const [breakdownModal, setBreakdownModal] = useState<{
 		isOpen: boolean;
 		title: string;
 		data: { name: string; icon: string; amount: number }[];
 	}>({ isOpen: false, title: "", data: [] });
 
-	const [unlinkedIds, setUnlinkedIds] = useState<Set<string>>(new Set());
 	const [selectedAccountForUnlink, setSelectedAccountForUnlink] =
 		useState<LinkedAccount | null>(null);
-	const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
+	const [isAccountDetailsModalOpen, setIsAccountDetailsModalOpen] =
+		useState(false);
+	const [isUnlinkConfirmOpen, setIsUnlinkConfirmOpen] = useState(false);
 
 	const linkedAccountsDisplay = useMemo((): LinkedAccount[] => {
 		const res = linkedAccountsResponse as LinkedAccountsApiResponse | undefined;
 		const raw = res?.success && Array.isArray(res?.data) ? res.data : [];
-		const filtered = raw.filter((a) => !unlinkedIds.has(a.id));
-		return filtered.map((a) => ({
+		return raw.map((a) => ({
 			id: a.id,
 			name: a.bankName || a.institution,
 			icon: getBankLogoUrl(a.bankName || a.institution),
 			lastFour: getLastFourFromAccountNumber(a.accountNumber),
 			balance: a.balance ?? 0,
 		}));
-	}, [linkedAccountsResponse, unlinkedIds, getBankLogoUrl]);
+	}, [linkedAccountsResponse, getBankLogoUrl]);
 
-	const handleUnlink = (id: string) => {
-		setUnlinkedIds((prev) => new Set(prev).add(id));
-		setIsUnlinkModalOpen(false);
+	const handleUnlinkConfirm = useCallback(async () => {
+		if (!selectedAccountForUnlink) return;
+		const id = selectedAccountForUnlink.id;
+		showLoader({
+			title: "Unlinking account",
+			subtitle: "Please wait...",
+		});
+		try {
+			const response = await unlinkBankAccountRequest(id);
+			if (response?.success) {
+				await queryClient.invalidateQueries({
+					queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+				});
+				toast.success("Bank account unlinked successfully");
+				setSelectedAccountForUnlink(null);
+				setIsUnlinkConfirmOpen(false);
+				return;
+			}
+			showErrorToast(
+				new Error(response?.message ?? "Could not unlink account."),
+				{ title: "Error", message: response?.message ?? "Please try again." }
+			);
+		} catch (err) {
+			showErrorToast(err, {
+				title: "Error",
+				message: "Could not unlink bank account. Please try again.",
+			});
+		} finally {
+			hideLoader();
+		}
+	}, [selectedAccountForUnlink, queryClient, showLoader, hideLoader]);
+
+	const handleCloseUnlinkConfirm = useCallback(() => {
+		setIsUnlinkConfirmOpen(false);
 		setSelectedAccountForUnlink(null);
-	};
+	}, []);
+
+	const handleCloseAccountDetails = useCallback(() => {
+		setIsAccountDetailsModalOpen(false);
+		setSelectedAccountForUnlink(null);
+	}, []);
+
+	const handleUnlinkClick = useCallback(() => {
+		setIsAccountDetailsModalOpen(false);
+		setIsUnlinkConfirmOpen(true);
+	}, []);
 
 	const handleAddAccountClick = () => {
-		setShowConnectCardModal(true);
+		setShowConnectBankModal(true);
 	};
+
+	const handleConnectConfirm = useCallback(() => {
+		setShowConnectBankModal(false);
+		const monoPublicKey = process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY?.trim();
+		if (!monoPublicKey) {
+			showErrorToast(new Error("Mono is not configured."), {
+				title: "Configuration error",
+				message: "Please try again later or contact support.",
+			});
+			return;
+		}
+		const customer = {
+			name: user?.name ?? "",
+			email: user?.email ?? "",
+		};
+		const connect = new Connect({
+			key: monoPublicKey,
+			scope: "auth",
+			data: { customer },
+			onSuccess: async ({ code }: { code: string }) => {
+				showLoader({
+					title: "Linking account",
+					subtitle: "Please wait...",
+				});
+				try {
+					const response = await linkBankRequest({ monoCode: code });
+					if (response?.success) {
+						await queryClient.invalidateQueries({
+							queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+						});
+						toast.success("Bank account linked successfully");
+						return;
+					}
+					showErrorToast(
+						new Error(response?.message ?? "Could not link account."),
+						{
+							title: "Error",
+							message: response?.message ?? "Please try again.",
+						}
+					);
+				} catch (err) {
+					showErrorToast(err, {
+						title: "Connection failed",
+						message: "Could not link bank account. Please try again.",
+					});
+				} finally {
+					hideLoader();
+				}
+			},
+			onClose: () => {},
+		});
+		connect.setup();
+		connect.open();
+	}, [user?.name, user?.email, queryClient, showLoader, hideLoader]);
 
 	// Category icons
 	const categoryIcons = {
@@ -191,7 +292,7 @@ export default function DashboardPage() {
 				{/* Left: Connect Card & Credit Health Stack */}
 				<div className="lg:col-span-12 grid gap-6 md:grid-cols-2">
 					<button
-						onClick={() => setShowConnectCardModal(true)}
+						onClick={() => setShowConnectBankModal(true)}
 						className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-primary/5 border-2 border-dashed border-slate-200 dark:border-white/10 text-text-secondary hover:border-green-primary hover:text-green-primary transition-all group h-32"
 					>
 						<div className="h-12 w-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center group-hover:bg-green-primary/10 transition-colors shadow-sm">
@@ -594,7 +695,7 @@ export default function DashboardPage() {
 							onAddAccount={handleAddAccountClick}
 							onSelectAccount={(account) => {
 								setSelectedAccountForUnlink(account);
-								setIsUnlinkModalOpen(true);
+								setIsAccountDetailsModalOpen(true);
 							}}
 						/>
 					)}
@@ -622,37 +723,37 @@ export default function DashboardPage() {
 				data={breakdownModal.data}
 			/>
 
-			{/* Unlink Account Modal */}
+			{/* Account details modal (view account, then choose to unlink or keep) */}
 			<UnlinkAccountModal
-				isOpen={isUnlinkModalOpen}
-				onClose={() => setIsUnlinkModalOpen(false)}
+				isOpen={isAccountDetailsModalOpen}
+				onClose={handleCloseAccountDetails}
 				account={selectedAccountForUnlink}
-				onUnlink={handleUnlink}
+				onUnlinkClick={handleUnlinkClick}
 			/>
 
-			{/* Connect Card Modal */}
-			<AddCardModal
-				open={showConnectCardModal}
-				onClose={() => setShowConnectCardModal(false)}
-				onConfirm={async () => {
-					try {
-						startSynchronization();
-					} catch (err) {
-						console.error("Failed to start synchronization", err);
-					}
-					await queryClient.invalidateQueries({
-						queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
-					});
-				}}
+			{/* Unlink account confirmation */}
+			<ConfirmModal
+				open={isUnlinkConfirmOpen}
+				onClose={handleCloseUnlinkConfirm}
+				title="Unlink account?"
+				subtitle={
+					selectedAccountForUnlink
+						? `This will remove ${selectedAccountForUnlink.name} from Flynt. You can link it again later.`
+						: ""
+				}
+				confirmLabel="Unlink account"
+				cancelLabel="Cancel"
+				onConfirm={handleUnlinkConfirm}
+				variant="danger"
 			/>
-			{/* Sync animation overlay when performing handshake */}
-			{isSyncing && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-					<div className="max-w-md w-full">
-						<SyncAnimation />
-					</div>
-				</div>
-			)}
+
+			{/* Connect Bank Modal */}
+			<ConnectBankSecureModal
+				open={showConnectBankModal}
+				onClose={() => setShowConnectBankModal(false)}
+				onConfirm={handleConnectConfirm}
+				primaryButtonText="Connect"
+			/>
 		</div>
 	);
 }

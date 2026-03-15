@@ -37,6 +37,9 @@ import type {
   OnboardingCompletePayload,
   OnboardingCompleteResponse,
   LinkedAccountsApiResponse,
+  LinkBankPayload,
+  LinkBankApiResponse,
+  UnlinkBankApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -50,6 +53,26 @@ export function useLinkedAccountsQuery() {
   return useCustomFetchQuery<LinkedAccountsApiResponse>(
     "/banking/linked-accounts",
     { queryKey: [LINKED_ACCOUNTS_QUERY_KEY] }
+  );
+}
+
+/** POST /banking/link */
+export async function linkBankRequest(
+  body: LinkBankPayload
+): Promise<LinkBankApiResponse> {
+  return customFetch<LinkBankApiResponse>("/banking/link", {
+    method: "post",
+    body,
+  });
+}
+
+/** DELETE /banking/linked-accounts/:id */
+export async function unlinkBankAccountRequest(
+  id: string
+): Promise<UnlinkBankApiResponse> {
+  return customFetch<UnlinkBankApiResponse>(
+    `/banking/linked-accounts/${id}`,
+    { method: "delete" }
   );
 }
 
