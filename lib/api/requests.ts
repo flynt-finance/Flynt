@@ -36,10 +36,22 @@ import type {
   SocialAuthResponseData,
   OnboardingCompletePayload,
   OnboardingCompleteResponse,
+  LinkedAccountsApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
 export const TWO_FA_STATUS_QUERY_KEY = "2fa-status";
+
+/** Linked accounts query key for invalidations */
+export const LINKED_ACCOUNTS_QUERY_KEY = "banking/linked-accounts";
+
+/** GET /banking/linked-accounts */
+export function useLinkedAccountsQuery() {
+  return useCustomFetchQuery<LinkedAccountsApiResponse>(
+    "/banking/linked-accounts",
+    { queryKey: [LINKED_ACCOUNTS_QUERY_KEY] }
+  );
+}
 
 /** Example: GET /example - add response type in types.ts when you have a real endpoint */
 export const EXAMPLE_QUERY_KEY = "example";

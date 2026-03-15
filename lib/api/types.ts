@@ -223,6 +223,9 @@ export interface LinkedAccount {
   updatedAt: string
 }
 
+/** GET /banking/linked-accounts response */
+export type LinkedAccountsApiResponse = TypeApiResponse<LinkedAccount[]>
+
 export interface OnboardingCompleteResponseData {
   profile: OnboardingProfile
   linkedAccounts: LinkedAccount[]

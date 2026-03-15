@@ -158,6 +158,12 @@ createQueryKey("users", { id }); // → ["users", { id }]
 
 Use the path only (e.g. `/users/profile`) — the base URL is prepended automatically.
 
+### Banking / Linked accounts
+
+- **`GET /banking/linked-accounts`** — Returns the list of bank accounts linked to the current user. Requires auth (Bearer token). Response shape: `{ success: true, data: LinkedAccount[] }`. Each `LinkedAccount` includes `id`, `userId`, `bankName`, `accountNumber` (masked, e.g. `******3461`), `monoAccountId`, `balance`, `currency`, `institution`, `isActive`, `createdAt`, `updatedAt`.
+- The dashboard uses this for the **Linked Accounts** section. Use the hook **`useLinkedAccountsQuery()`** from `lib/api/requests.ts`; invalidate with **`LINKED_ACCOUNTS_QUERY_KEY`** after linking or unlinking when the backend supports it.
+- Bank logos are resolved from the [Nigerian banks API](https://supermx1.github.io/nigerian-banks-api/data.json): the app fetches `data.json` (cached) and uses **`getBankLogoUrl(bankName)`** from `lib/banks/nigerian-banks.ts` to map `bankName`/`institution` to logo URLs (`https://supermx1.github.io/nigerian-banks-api/logos/{slug}.png`). Use the **`useNigerianBanks()`** hook for reactive logo resolution in components.
+
 ---
 
 ## 6. Auth, Cookies & Session
@@ -334,23 +340,25 @@ The waitlist form posts to `/api/waitlist` (a Next.js API route), which forwards
 
 ## 13. Key File Reference
 
-| Area                     | File                                                  |
-| ------------------------ | ----------------------------------------------------- |
-| API types                | `lib/api/types.ts`                                    |
-| API client (Axios)       | `lib/api/client.ts`                                   |
-| API request functions    | `lib/api/requests.ts`                                 |
-| Auth cookie helpers      | `lib/auth-cookie.ts`                                  |
-| User auth store          | `stores/use-auth-store.ts`                            |
-| Theme context            | `contexts/ThemeContext.tsx`                           |
-| Global styles + CSS vars | `app/globals.css`                                     |
-| Theme toggle button      | `components/ThemeToggle.tsx`                          |
-| Toast theme wrapper      | `components/ThemeAwareToaster.tsx`                    |
-| Form validation          | `lib/validations/auth.ts`                             |
-| Waitlist validation      | `lib/validations/waitlist.ts`                         |
-| Waitlist API route       | `app/api/waitlist/route.ts`                           |
-| Reusable modal           | `components/modal/Modal.tsx`                          |
-| Providers wrapper        | `components/Providers.tsx`                            |
-| Dashboard layout         | `app/(protected)/dashboard/DashboardLayoutClient.tsx` |
+| Area                     | File                                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| API types                | `lib/api/types.ts`                                                                                          |
+| API client (Axios)       | `lib/api/client.ts`                                                                                         |
+| API request functions    | `lib/api/requests.ts`                                                                                       |
+| Linked accounts API      | `useLinkedAccountsQuery`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts` |
+| Bank logo resolution     | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                        |
+| Auth cookie helpers      | `lib/auth-cookie.ts`                                                                                        |
+| User auth store          | `stores/use-auth-store.ts`                                                                                  |
+| Theme context            | `contexts/ThemeContext.tsx`                                                                                 |
+| Global styles + CSS vars | `app/globals.css`                                                                                           |
+| Theme toggle button      | `components/ThemeToggle.tsx`                                                                                |
+| Toast theme wrapper      | `components/ThemeAwareToaster.tsx`                                                                          |
+| Form validation          | `lib/validations/auth.ts`                                                                                   |
+| Waitlist validation      | `lib/validations/waitlist.ts`                                                                               |
+| Waitlist API route       | `app/api/waitlist/route.ts`                                                                                 |
+| Reusable modal           | `components/modal/Modal.tsx`                                                                                |
+| Providers wrapper        | `components/Providers.tsx`                                                                                  |
+| Dashboard layout         | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                       |
 
 ---
 

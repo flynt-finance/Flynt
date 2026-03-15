@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "supermx1.github.io",
+        port: "",
+        pathname: "/nigerian-banks-api/**",
+      },
     ],
   },
 };
