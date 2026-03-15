@@ -112,6 +112,15 @@ export function useTransactionsQuery(params: TransactionsQueryParams) {
   if (params.categoryId !== undefined && params.categoryId !== "") {
     queryParams.categoryId = params.categoryId;
   }
+  if (params.startDate !== undefined && params.startDate !== "") {
+    queryParams.startDate = params.startDate;
+  }
+  if (params.endDate !== undefined && params.endDate !== "") {
+    queryParams.endDate = params.endDate;
+  }
+  if (params.orderBy !== undefined && params.orderBy !== "") {
+    queryParams.orderBy = params.orderBy;
+  }
   return useCustomFetchQuery<TransactionsApiResponse>("/transactions", {
     queryKey: [TRANSACTIONS_QUERY_KEY, queryParams],
     config: { params: queryParams },

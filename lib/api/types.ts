@@ -279,6 +279,12 @@ export interface TransactionCategory {
   type: string | null
 }
 
+/** GET /transactions - account on each transaction */
+export interface TransactionAccount {
+  bankName: string
+  accountNumber: string
+}
+
 /** GET /transactions - single transaction */
 export interface Transaction {
   id: string
@@ -289,7 +295,9 @@ export interface Transaction {
   date: string
   reference: string
   category: TransactionCategory
-  /** Bank or source name when available (e.g. "ZENITH") */
+  /** Account (bank name + masked number) when available */
+  account?: TransactionAccount
+  /** @deprecated Prefer account.bankName */
   bankName?: string
   /** Transaction status when available (e.g. "COMPLETED") */
   status?: string
@@ -315,6 +323,12 @@ export interface TransactionsQueryParams {
   search?: string
   accountId?: string
   categoryId?: string
+  /** ISO date YYYY-MM-DD; when set with endDate, filters transactions by date range */
+  startDate?: string
+  /** ISO date YYYY-MM-DD; when set with startDate, filters transactions by date range */
+  endDate?: string
+  /** Sort order: desc (newest first) or asc (oldest first). Default desc. */
+  orderBy?: "asc" | "desc"
 }
 
 /** GET /transactions/summary - inflow/outflow entry */

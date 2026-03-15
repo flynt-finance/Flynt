@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Calendar, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import type { Transaction } from "@/lib/api/types";
+import { formatTransactionAmount } from "@/lib/utils";
 import { getCategoryIconComponent } from "@/lib/transactions/category-icons";
 
 interface LegacyTransactionItemProps {
@@ -55,6 +56,7 @@ export default function TransactionItem(props: TransactionItemProps) {
 	let typeLabel: string | null = null;
 	let bankName: string | null = null;
 	let statusLabel: string | null = null;
+	let currency = "NGN";
 
 	if (isApiTransactionProps(props)) {
 		const t = props.transaction;
@@ -64,8 +66,9 @@ export default function TransactionItem(props: TransactionItemProps) {
 		categoryName = t.category?.name ?? "Uncategorized";
 		dateStr = formatTransactionDate(t.date);
 		typeLabel = t.type === "INFLOW" ? "INCOME" : "DEBIT";
-		bankName = t.bankName ?? null;
+		bankName = t.account?.bankName ?? t.bankName ?? null;
 		statusLabel = t.status ?? "COMPLETED";
+		currency = t.currency ?? "NGN";
 		const IconComponent = getCategoryIconComponent(t.category?.icon);
 		const color = t.category?.color;
 		if (color) iconBgColor = color;
@@ -143,7 +146,8 @@ export default function TransactionItem(props: TransactionItemProps) {
 							isNegative ? "text-error" : "text-success"
 						}`}
 					>
-						{isNegative ? "-" : "+"}₦{Math.abs(amount).toLocaleString()}
+						{isNegative ? "-" : "+"}
+						{formatTransactionAmount(Math.abs(amount), currency)}
 					</p>
 					{isApiTransaction && statusLabel && (
 						<p className="text-[9px] font-bold uppercase tracking-widest text-text-muted">
@@ -196,7 +200,8 @@ export default function TransactionItem(props: TransactionItemProps) {
 					isNegative ? "text-error" : "text-success"
 				}`}
 			>
-				{isNegative ? "-" : "+"}₦{Math.abs(amount).toLocaleString()}
+				{isNegative ? "-" : "+"}
+				{formatTransactionAmount(Math.abs(amount), currency)}
 			</motion.span>
 		</>
 	);

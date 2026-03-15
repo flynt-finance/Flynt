@@ -1,6 +1,7 @@
 "use client";
 
 import type { Transaction } from "@/lib/api/types";
+import { formatTransactionAmount } from "@/lib/utils";
 import { getCategoryIconComponent } from "@/lib/transactions/category-icons";
 import Modal from "@/components/modal/Modal";
 
@@ -80,8 +81,10 @@ export default function TransactionDetailModal({
 							}`}
 						>
 							{transaction.type === "OUTFLOW" ? "-" : "+"}
-							{transaction.currency}{" "}
-							{Math.abs(transaction.amount).toLocaleString()}
+							{formatTransactionAmount(
+								Math.abs(transaction.amount),
+								transaction.currency
+							)}
 						</span>
 					</div>
 

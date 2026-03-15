@@ -14,6 +14,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTriggerButton,
 } from "@/components/ui/dropdown-menu";
+import { DateRangeFilterDropdown } from "@/components/ui/date-range-filter-dropdown";
+import type { DateRangeValue } from "@/components/ui/date-range-filter-dropdown";
 import {
 	useLinkedAccountsQuery,
 	useTransactionsQuery,
@@ -32,6 +34,11 @@ const TYPE_OPTIONS = [
 	{ value: "credit", label: "Credit" },
 ] as const;
 
+const ORDER_BY_OPTIONS = [
+	{ value: "desc", label: "Newest first" },
+	{ value: "asc", label: "Oldest first" },
+] as const;
+
 const TRANSACTIONS_LIMIT = 50;
 
 const getLastFourFromAccountNumber = (accountNumber: string): string => {
@@ -45,8 +52,10 @@ export default function TransactionsPage() {
 	const [typeFilter, setTypeFilter] = useState<"all" | "debit" | "credit">(
 		"all"
 	);
+	const [orderBy, setOrderBy] = useState<"asc" | "desc">("desc");
 	const [search, setSearch] = useState("");
 	const [accountId, setAccountId] = useState("");
+	const [dateRange, setDateRange] = useState<DateRangeValue | null>(null);
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<Transaction | null>(null);
 
@@ -71,8 +80,13 @@ export default function TransactionsPage() {
 		limit: TRANSACTIONS_LIMIT,
 		page,
 		...(typeFilter !== "all" && { type: typeFilter }),
+		orderBy,
 		...(search.trim() !== "" && { search: search.trim() }),
 		...(accountId !== "" && { accountId }),
+		...(dateRange && {
+			startDate: dateRange.startDate,
+			endDate: dateRange.endDate,
+		}),
 	};
 
 	const { data: transactionsResponse, isLoading: isTransactionsLoading } =
@@ -108,6 +122,21 @@ export default function TransactionsPage() {
 		setAccountId(value);
 		setPage(1);
 	}, []);
+
+	const handleDateRangeSelect = useCallback((value: DateRangeValue | null) => {
+		setDateRange(value);
+		setPage(1);
+	}, []);
+
+	const handleOrderByChange = useCallback((value: "asc" | "desc") => {
+		setOrderBy(value);
+		setPage(1);
+	}, []);
+
+	const typeLabel =
+		TYPE_OPTIONS.find((o) => o.value === typeFilter)?.label ?? "All";
+	const orderByLabel =
+		ORDER_BY_OPTIONS.find((o) => o.value === orderBy)?.label ?? "Newest first";
 
 	return (
 		<div className="mx-auto max-w-7xl space-y-6 p-4 sm:space-y-8 sm:p-6">
@@ -209,28 +238,49 @@ export default function TransactionsPage() {
 					/>
 				</div>
 
-				<div className="flex items-center gap-2 overflow-x-auto px-2 md:px-0">
+				<div className="flex items-center gap-2 overflow-x-auto px-2 md:px-0 flex-wrap">
 					<Filter
 						className="hidden h-4 w-4 text-slate-400 md:block"
 						aria-hidden
 					/>
-					{TYPE_OPTIONS.map((opt) => (
-						<button
-							key={opt.value}
+					<DropdownMenu>
+						<DropdownMenuTriggerButton
 							type="button"
-							onClick={() => handleTypeChange(opt.value)}
-							className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-								typeFilter === opt.value
-									? "bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900"
-									: "text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5"
-							}`}
-							aria-pressed={typeFilter === opt.value}
-							aria-label={`Filter by ${opt.label}`}
+							className="shrink-0 min-w-28 sm:min-w-32"
+							aria-label="Filter by type"
 						>
-							{opt.label}
-						</button>
-					))}
-
+							<span className="truncate">{typeLabel}</span>
+						</DropdownMenuTriggerButton>
+						<DropdownMenuContent align="end" className="min-w-32">
+							{TYPE_OPTIONS.map((opt) => (
+								<DropdownMenuItem
+									key={opt.value}
+									onSelect={() => handleTypeChange(opt.value)}
+								>
+									{opt.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+					<DropdownMenu>
+						<DropdownMenuTriggerButton
+							type="button"
+							className="shrink-0 min-w-28 sm:min-w-36"
+							aria-label="Order by date"
+						>
+							<span className="truncate">{orderByLabel}</span>
+						</DropdownMenuTriggerButton>
+						<DropdownMenuContent align="end" className="min-w-36">
+							{ORDER_BY_OPTIONS.map((opt) => (
+								<DropdownMenuItem
+									key={opt.value}
+									onSelect={() => handleOrderByChange(opt.value)}
+								>
+									{opt.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<DropdownMenu>
 						<DropdownMenuTriggerButton
 							type="button"
@@ -257,6 +307,11 @@ export default function TransactionsPage() {
 							))}
 						</DropdownMenuContent>
 					</DropdownMenu>
+					<DateRangeFilterDropdown
+						value={dateRange}
+						onRangeSelect={handleDateRangeSelect}
+						triggerClassName="shrink-0 min-w-32 sm:min-w-40"
+					/>
 				</div>
 			</div>
 
