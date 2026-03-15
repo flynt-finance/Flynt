@@ -168,8 +168,11 @@ export interface CustomFetchConfig {
   [key: string]: unknown
 }
 
+/** Query key shape accepted by React Query (useQuery) */
+export type QueryKey = readonly unknown[];
+
 export interface CustomFetchQueryOptions {
-  queryKey?: string[] | (() => string[])
+  queryKey?: QueryKey | (() => QueryKey)
   enabled?: boolean | (() => boolean)
   staleTime?: number
   gcTime?: number

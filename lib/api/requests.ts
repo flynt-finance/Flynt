@@ -28,7 +28,6 @@ import type {
   TwoFaConfirmPayload,
   TwoFaConfirmResponseData,
   TwoFaStatusResponseData,
-  TwoFaDisablePayload,
   TwoFaDisableResponseData,
   TwoFaVerifyLoginPayload,
   TwoFaVerifyLoginResponseData,
@@ -46,8 +45,7 @@ import type {
   TransactionSummaryApiResponse,
   SpendingInsightsApiResponse,
   LeaksApiResponse,
-  GovernanceSummaryApiResponse,
-  GovernanceAllocationsPayload,
+  GovernanceSummaryData,
   CreditScoreData,
 } from "./types";
 
@@ -123,7 +121,7 @@ export const GOVERNANCE_SUMMARY_QUERY_KEY = "governance/summary";
 
 /** GET /governance/summary */
 export function useGovernanceSummaryQuery() {
-  return useCustomFetchQuery<GovernanceSummaryApiResponse>(
+  return useCustomFetchQuery<GovernanceSummaryData>(
     "/governance/summary",
     { queryKey: [GOVERNANCE_SUMMARY_QUERY_KEY] }
   );
@@ -159,7 +157,7 @@ export function useTransactionsQuery(params: TransactionsQueryParams) {
     limit: params.limit,
     page: params.page,
   };
-  if (params.type !== undefined && params.type !== "") {
+  if (params.type !== undefined) {
     queryParams.type = params.type;
   }
   if (params.search !== undefined && params.search !== "") {
@@ -177,7 +175,7 @@ export function useTransactionsQuery(params: TransactionsQueryParams) {
   if (params.endDate !== undefined && params.endDate !== "") {
     queryParams.endDate = params.endDate;
   }
-  if (params.orderBy !== undefined && params.orderBy !== "") {
+  if (params.orderBy !== undefined) {
     queryParams.orderBy = params.orderBy;
   }
   return useCustomFetchQuery<TransactionsApiResponse>("/transactions", {

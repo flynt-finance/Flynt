@@ -76,20 +76,20 @@ export default function BudgetPage() {
 	const [savingsPct, setSavingsPct] = useState(20);
 
 	const summaryData = data?.data;
-	const allocations = summaryData?.allocations ?? [];
 	const metrics = summaryData?.metrics;
 	const cycle = summaryData?.cycle;
 	const totalInflow = metrics?.totalInflow ?? 0;
 
 	useEffect(() => {
-		if (!isSuccess || !summaryData?.allocations?.length) return;
-		const ess = getAllocationByKey(allocations, ALLOCATION_KEYS.ESSENTIALS);
-		const disc = getAllocationByKey(allocations, ALLOCATION_KEYS.DISCRETIONARY);
-		const sav = getAllocationByKey(allocations, ALLOCATION_KEYS.SAVINGS);
+		const list = summaryData?.allocations ?? [];
+		if (!isSuccess || list.length === 0) return;
+		const ess = getAllocationByKey(list, ALLOCATION_KEYS.ESSENTIALS);
+		const disc = getAllocationByKey(list, ALLOCATION_KEYS.DISCRETIONARY);
+		const sav = getAllocationByKey(list, ALLOCATION_KEYS.SAVINGS);
 		if (ess) setEssentialsPct(ess.targetPercentage);
 		if (disc) setDiscretionaryPct(disc.targetPercentage);
 		if (sav) setSavingsPct(sav.targetPercentage);
-	}, [isSuccess, summaryData?.allocations, allocations]);
+	}, [isSuccess, summaryData]);
 
 	const totalPct = essentialsPct + discretionaryPct + savingsPct;
 	const canSave = totalPct === 100;
