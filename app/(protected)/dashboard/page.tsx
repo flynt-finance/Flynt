@@ -17,10 +17,10 @@ import {
 	LinkedAccountsCard,
 	UnlinkAccountModal,
 	DebtDecisionCard,
+	TotalAggregatedLiquiditySection,
 	type LinkedAccount,
 } from "@/components/dashboard";
 import { useDebts } from "@/contexts/DebtContext";
-import LiquidityTerminal from "@/components/ui/LiquidityTerminal";
 import FlyntInsights from "@/components/dashboard/Insights";
 import FinancialLeaksSystem from "@/components/dashboard/FinancialLeak";
 import {
@@ -336,16 +336,9 @@ export default function DashboardPage() {
 				</div>
 
 				{/* Intelligence & Liquidity Layer */}
-				{/* Left: Liquidity Terminal */}
+				{/* Left: Total Aggregated Liquidity */}
 				<div className="lg:col-span-7">
-					<LiquidityTerminal
-						totalBalance={15750400}
-						connectedBanks={[
-							{ name: "Zenith Bank", amount: 8000000, color: "bg-red-600" },
-							{ name: "Access Bank", amount: 4750400, color: "bg-orange-500" },
-							{ name: "UBA", amount: 3000000, color: "bg-red-800" },
-						]}
-					/>
+					<TotalAggregatedLiquiditySection />
 				</div>
 
 				{/* Right: Flynt Intelligence Hub */}

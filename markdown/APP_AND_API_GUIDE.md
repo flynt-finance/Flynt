@@ -161,8 +161,15 @@ Use the path only (e.g. `/users/profile`) — the base URL is prepended automati
 ### Banking / Linked accounts
 
 - **`GET /banking/linked-accounts`** — Returns the list of bank accounts linked to the current user. Requires auth (Bearer token). Response shape: `{ success: true, data: LinkedAccount[] }`. Each `LinkedAccount` includes `id`, `userId`, `bankName`, `accountNumber` (masked, e.g. `******3461`), `monoAccountId`, `balance`, `currency`, `institution`, `isActive`, `createdAt`, `updatedAt`.
-- The dashboard uses this for the **Linked Accounts** section. Use the hook **`useLinkedAccountsQuery()`** from `lib/api/requests.ts`; invalidate with **`LINKED_ACCOUNTS_QUERY_KEY`** after linking or unlinking when the backend supports it.
+- The dashboard uses this for the **Linked Accounts** section. Use the hook **`useLinkedAccountsQuery()`** from `lib/api/requests.ts`; invalidate with **`LINKED_ACCOUNTS_QUERY_KEY`** after linking or unlinking.
+- **`POST /banking/link`** — Links a bank account after the user completes Mono Connect. Body: `{ monoCode: string }`. Response: `{ success: true, data: LinkedAccount, message }`. Use **`linkBankRequest({ monoCode })`**; after success, invalidate `LINKED_ACCOUNTS_QUERY_KEY` so the list refetches.
+- **`DELETE /banking/linked-accounts/:id`** — Unlinks a bank account. Response: `{ success: true, data: { success: true }, message }`. Use **`unlinkBankAccountRequest(id)`**; after success, invalidate `LINKED_ACCOUNTS_QUERY_KEY`.
 - Bank logos are resolved from the [Nigerian banks API](https://supermx1.github.io/nigerian-banks-api/data.json): the app fetches `data.json` (cached) and uses **`getBankLogoUrl(bankName)`** from `lib/banks/nigerian-banks.ts` to map `bankName`/`institution` to logo URLs (`https://supermx1.github.io/nigerian-banks-api/logos/{slug}.png`). Use the **`useNigerianBanks()`** hook for reactive logo resolution in components.
+
+### Banking / Liquidity
+
+- **`GET /banking/liquidity?sync=true`** — Returns aggregated liquidity across linked accounts. Requires auth. Response shape: `{ success: true, data: { totalBalance, currency, accounts: LiquidityAccount[], isLiveSynced } }`. Each `LiquidityAccount` has `id`, `bankName`, `accountNumber`, `balance`, `currency`, `logo`.
+- The dashboard **Total Aggregated Liquidity** section uses **`useLiquidityQuery()`** from `lib/api/requests.ts`. The component **`TotalAggregatedLiquiditySection`** (`components/dashboard/TotalAggregatedLiquiditySection.tsx`) fetches this data, shows a loading skeleton or empty state when there are no accounts, and renders **`LiquidityTerminal`** with the balance and account breakdown when data is available. Invalidate with **`LIQUIDITY_QUERY_KEY`** if you add a refresh action.
 
 ---
 
@@ -328,11 +335,12 @@ The `ThemeToggle` component in `components/ThemeToggle.tsx` is a ready-made butt
 
 ## 12. Environment Variables
 
-| Variable                       | Used for                | Where                                 |
-| ------------------------------ | ----------------------- | ------------------------------------- |
-| `NEXT_PUBLIC_API_URL`          | API base URL            | Client + server                       |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In          | Client only                           |
-| `WAITLIST_GOOGLE_SCRIPT_URL`   | Waitlist → Google Sheet | Server only (never exposed to client) |
+| Variable                       | Used for                 | Where                                         |
+| ------------------------------ | ------------------------ | --------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`          | API base URL             | Client + server                               |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In           | Client only                                   |
+| `NEXT_PUBLIC_MONO_PUBLIC_KEY`  | Mono Connect (link bank) | Client only; required for dashboard link flow |
+| `WAITLIST_GOOGLE_SCRIPT_URL`   | Waitlist → Google Sheet  | Server only (never exposed to client)         |
 
 The waitlist form posts to `/api/waitlist` (a Next.js API route), which forwards the submission to a Google Apps Script that writes to a Google Sheet. Set `WAITLIST_GOOGLE_SCRIPT_URL` in `.env.local`.
 
@@ -340,25 +348,28 @@ The waitlist form posts to `/api/waitlist` (a Next.js API route), which forwards
 
 ## 13. Key File Reference
 
-| Area                     | File                                                                                                        |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| API types                | `lib/api/types.ts`                                                                                          |
-| API client (Axios)       | `lib/api/client.ts`                                                                                         |
-| API request functions    | `lib/api/requests.ts`                                                                                       |
-| Linked accounts API      | `useLinkedAccountsQuery`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts` |
-| Bank logo resolution     | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                        |
-| Auth cookie helpers      | `lib/auth-cookie.ts`                                                                                        |
-| User auth store          | `stores/use-auth-store.ts`                                                                                  |
-| Theme context            | `contexts/ThemeContext.tsx`                                                                                 |
-| Global styles + CSS vars | `app/globals.css`                                                                                           |
-| Theme toggle button      | `components/ThemeToggle.tsx`                                                                                |
-| Toast theme wrapper      | `components/ThemeAwareToaster.tsx`                                                                          |
-| Form validation          | `lib/validations/auth.ts`                                                                                   |
-| Waitlist validation      | `lib/validations/waitlist.ts`                                                                               |
-| Waitlist API route       | `app/api/waitlist/route.ts`                                                                                 |
-| Reusable modal           | `components/modal/Modal.tsx`                                                                                |
-| Providers wrapper        | `components/Providers.tsx`                                                                                  |
-| Dashboard layout         | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                       |
+| Area                       | File                                                                                                                                                       |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API types                  | `lib/api/types.ts`                                                                                                                                         |
+| API client (Axios)         | `lib/api/client.ts`                                                                                                                                        |
+| API request functions      | `lib/api/requests.ts`                                                                                                                                      |
+| Linked accounts API        | `useLinkedAccountsQuery`, `linkBankRequest`, `unlinkBankAccountRequest`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts` |
+| Liquidity API              | `useLiquidityQuery`, `LIQUIDITY_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                           |
+| Total Aggregated Liquidity | `components/dashboard/TotalAggregatedLiquiditySection.tsx` (uses `LiquidityTerminal` and `useLiquidityQuery`)                                              |
+| Bank logo resolution       | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                                                                       |
+| Global fullscreen loader   | `contexts/GlobalLoaderContext.tsx` (`useGlobalLoader`, `showLoader`, `hideLoader`)                                                                         |
+| Auth cookie helpers        | `lib/auth-cookie.ts`                                                                                                                                       |
+| User auth store            | `stores/use-auth-store.ts`                                                                                                                                 |
+| Theme context              | `contexts/ThemeContext.tsx`                                                                                                                                |
+| Global styles + CSS vars   | `app/globals.css`                                                                                                                                          |
+| Theme toggle button        | `components/ThemeToggle.tsx`                                                                                                                               |
+| Toast theme wrapper        | `components/ThemeAwareToaster.tsx`                                                                                                                         |
+| Form validation            | `lib/validations/auth.ts`                                                                                                                                  |
+| Waitlist validation        | `lib/validations/waitlist.ts`                                                                                                                              |
+| Waitlist API route         | `app/api/waitlist/route.ts`                                                                                                                                |
+| Reusable modal             | `components/modal/Modal.tsx`                                                                                                                               |
+| Providers wrapper          | `components/Providers.tsx`                                                                                                                                 |
+| Dashboard layout           | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                                                                      |
 
 ---
 
@@ -379,7 +390,8 @@ When building new dashboard pages, use `max-w-7xl mx-auto` for content width and
 
 1. **QueryClientProvider** — React Query
 2. **ThemeProvider** — light/dark mode
-3. **DebtProvider** — app-specific state
-4. **ThemeAwareToaster** — Sonner toasts that match the current theme
+3. **GlobalLoaderProvider** — fullscreen loader (title/subtitle, trigger from anywhere via `useGlobalLoader()`)
+4. **DebtProvider** — app-specific state
+5. **ThemeAwareToaster** — Sonner toasts that match the current theme
 
-Order matters: React Query and theme must be outer layers so every component can access them.
+Order matters: React Query and theme must be outer layers so every component can access them. The global loader is used during banking link/unlink and can be triggered from any component inside the provider.

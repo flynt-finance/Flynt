@@ -40,6 +40,7 @@ import type {
   LinkBankPayload,
   LinkBankApiResponse,
   UnlinkBankApiResponse,
+  LiquidityApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -73,6 +74,17 @@ export async function unlinkBankAccountRequest(
   return customFetch<UnlinkBankApiResponse>(
     `/banking/linked-accounts/${id}`,
     { method: "delete" }
+  );
+}
+
+/** Liquidity query key for invalidations */
+export const LIQUIDITY_QUERY_KEY = "banking/liquidity";
+
+/** GET /banking/liquidity?sync=true */
+export function useLiquidityQuery() {
+  return useCustomFetchQuery<LiquidityApiResponse>(
+    "/banking/liquidity?sync=true",
+    { queryKey: [LIQUIDITY_QUERY_KEY] }
   );
 }
 

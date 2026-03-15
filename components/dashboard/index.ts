@@ -12,3 +12,4 @@ export {
 export { default as UnlinkAccountModal } from "./UnlinkAccountModal";
 export { default as AccountBreakdownModal } from "./AccountBreakdownModal";
 export { default as DebtDecisionCard } from "./DebtDecisionCard";
+export { default as TotalAggregatedLiquiditySection } from "./TotalAggregatedLiquiditySection";

@@ -237,6 +237,27 @@ export type LinkBankApiResponse = TypeApiResponse<LinkedAccount>
 /** DELETE /banking/linked-accounts/:id response */
 export type UnlinkBankApiResponse = TypeApiResponse<{ success: boolean }>
 
+/** GET /banking/liquidity - account in liquidity response */
+export interface LiquidityAccount {
+  id: string
+  bankName: string
+  accountNumber: string
+  balance: number
+  currency: string
+  logo: string | null
+}
+
+/** GET /banking/liquidity - data shape */
+export interface LiquidityData {
+  totalBalance: number
+  currency: string
+  accounts: LiquidityAccount[]
+  isLiveSynced: boolean
+}
+
+/** GET /banking/liquidity?sync=true response */
+export type LiquidityApiResponse = TypeApiResponse<LiquidityData>
+
 export interface OnboardingCompleteResponseData {
   profile: OnboardingProfile
   linkedAccounts: LinkedAccount[]
