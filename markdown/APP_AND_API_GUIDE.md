@@ -16,13 +16,15 @@ NEXT_PUBLIC_API_URL=https://your-api-url.com
 
 ### Pages and who can access them
 
-| Area          | Routes                                              | Who can access        |
-| ------------- | --------------------------------------------------- | --------------------- |
-| **Public**    | `/`, `/waitlist`                                    | Everyone              |
-| **Auth only** | `/login`, `/register`, `/verify-email`, `/onboard`  | Logged-out users only |
-| **Protected** | `/dashboard`, `/dashboard/*`, `/onboarding/success` | Logged-in users only  |
+| Area          | Routes                                                       | Who can access        |
+| ------------- | ------------------------------------------------------------ | --------------------- |
+| **Public**    | `/`, `/waitlist`                                             | Everyone              |
+| **Auth only** | `/login`, `/register`, `/verify-email`                       | Logged-out users only |
+| **Protected** | `/dashboard`, `/dashboard/*`, `/onboard`, `/onboard/success` | Logged-in users only  |
 
-Unauthenticated users who try to visit a protected page are automatically redirected to login. Logged-in users who visit auth pages are redirected to the dashboard. This is handled in **middleware** using the stored auth token.
+Unauthenticated users who try to visit a protected page are automatically redirected to login. Logged-in users who visit auth pages are redirected to the dashboard or to `/onboard` if they have not completed onboarding.
+
+**Onboarding gate:** Logged-in users with **onboarding not completed** are redirected to `/onboard` when they try to access the dashboard (or other dashboard routes). Logged-in users with **onboarding completed** are not allowed on the onboard stepper (`/onboard`) and are redirected to the dashboard; they can still hit `/onboard/success` once after completing (then that page redirects to the dashboard). This is enforced in **middleware** (proxy) and optionally in layout components.
 
 ---
 
@@ -76,12 +78,12 @@ The error format from the Flynt backend looks like this:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "message": "Validation failed",
-    "code": "VALIDATION_ERROR",
-    "details": ["Please provide a valid phone number"]
-  }
+	"success": false,
+	"error": {
+		"message": "Validation failed",
+		"code": "VALIDATION_ERROR",
+		"details": ["Please provide a valid phone number"]
+	}
 }
 ```
 
@@ -97,11 +99,11 @@ Use this for a single call from an event handler, like submitting a form.
 
 ```ts
 const res = await customFetch<TypeApiResponse<LoginResponseData>>(
-  "/auth/login",
-  {
-    method: "post",
-    body: { email, password },
-  },
+	"/auth/login",
+	{
+		method: "post",
+		body: { email, password },
+	}
 );
 ```
 
@@ -111,7 +113,7 @@ Use this when you want to load and cache data in a component (e.g. user profile,
 
 ```ts
 const { data, isLoading, refetch } =
-  useCustomFetchQuery<MyData>("/some-endpoint");
+	useCustomFetchQuery<MyData>("/some-endpoint");
 ```
 
 Returns the standard React Query result — `data`, `isLoading`, `error`, `refetch`, etc.
@@ -122,14 +124,14 @@ Use this for POST, PUT, PATCH, or DELETE calls — typically form submissions.
 
 ```ts
 const { mutate, isPending } = useCustomFetchMutation<MyData>(
-  "/some-endpoint",
-  "post",
-  {
-    onSuccess: (data) => {
-      /* handle success */
-    },
-    invalidateQueries: [createQueryKey("some-endpoint")],
-  },
+	"/some-endpoint",
+	"post",
+	{
+		onSuccess: (data) => {
+			/* handle success */
+		},
+		invalidateQueries: [createQueryKey("some-endpoint")],
+	}
 );
 ```
 
@@ -184,6 +186,15 @@ A short-lived cookie (15 minutes) used to pass the user's email and name from th
 
 `clearAllAuthStorage()` wipes the token, registration data, `sessionStorage`, and `localStorage` in one call. Use this after email verification so the user is fully signed out before redirecting to login.
 
+### Initial user cookie (`flynt_initial_user`) and proxy
+
+The middleware (proxy in `proxy.ts`) runs on protected and auth routes. When the user has a valid auth token:
+
+- **If the `flynt_initial_user` cookie is missing** (e.g. first request after login): the proxy calls `GET /auth/me`, gets the user, encodes it, sets the `flynt_initial_user` cookie (7-day expiry, same as the token), and forwards the request with the user in the `x-flynt-user` header.
+- **If the cookie is already present:** the proxy does **not** call `/auth/me`. It reads the user from the cookie, applies redirect logic (onboarding gate, auth vs protected), and passes the cookie value in the `x-flynt-user` header. The user object is therefore only fetched from the API when the cookie was missing; on reload and subsequent requests the app uses the cached user from the cookie.
+
+Layouts (root and dashboard) read the user via `lib/auth-user-header.ts`: either from the `x-flynt-user` request header or from the `flynt_initial_user` cookie, and pass it as `initialUser` to client components.
+
 ### User state (Zustand store)
 
 The auth store in `stores/use-auth-store.ts` holds the current user in memory:
@@ -191,7 +202,7 @@ The auth store in `stores/use-auth-store.ts` holds the current user in memory:
 - `setData({ user })` — update the user in state
 - `fetchUser()` — calls `GET /auth/me` and updates state; clears user and token if the call fails
 
-The dashboard layout calls `fetchUser()` on mount so the sidebar and header always show up-to-date user info.
+The dashboard layout does **not** call `fetchUser()` on mount. The root layout passes `initialUser` to `AuthHydrator`, and the dashboard layout passes `initialUser` to `DashboardLayoutClient`. Those components hydrate the store once with `initialUser` from the server (header/cookie) so that no client-side `/auth/me` request is made on load. The sidebar and header therefore show the user data that was provided by the proxy (from the cookie when present). After a full page reload, the user object in the UI is whatever was in the cookie; it is not re-fetched from the API unless something explicitly calls `fetchUser()` (e.g. after completing onboarding or updating profile).
 
 ---
 

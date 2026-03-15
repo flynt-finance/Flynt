@@ -183,3 +183,54 @@ export interface CustomFetchMutationOptions<T = unknown> {
   invalidateQueries?: string[][]
   config?: CustomFetchConfig
 }
+
+/** POST /onboarding/complete payload */
+export interface OnboardingCompletePayload {
+  employmentStatus: "salaried" | "self-employed" | "freelancer" | "business-owner"
+  incomeRange: "100k-250k" | "250k-500k" | "500k-1m" | "1m+"
+  financialGoal: "control-spending" | "save-money" | "start-investing" | "plan-future"
+  budgetingExperience: "new" | "some-experience" | "experienced"
+  mono: string
+  monoCode: string
+  authorizationConsent: boolean
+}
+
+export interface OnboardingProfile {
+  id: string
+  userId: string
+  employmentStatus: string
+  incomeRange: string
+  financialGoal: string
+  budgetingExperience: string
+  authorizationConsent: boolean
+  isCompleted: boolean
+  completedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LinkedAccount {
+  id: string
+  userId: string
+  bankName: string
+  accountNumber: string
+  monoAccountId: string
+  balance: number
+  currency: string
+  institution: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OnboardingCompleteResponseData {
+  profile: OnboardingProfile
+  linkedAccounts: LinkedAccount[]
+}
+
+/** POST /onboarding/complete response */
+export interface OnboardingCompleteResponse {
+  success: boolean
+  data: OnboardingCompleteResponseData
+  message: string
+}
