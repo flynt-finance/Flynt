@@ -32,6 +32,7 @@ import {
 	LIQUIDITY_QUERY_KEY,
 	TRANSACTIONS_QUERY_KEY,
 	SPENDING_INSIGHTS_QUERY_KEY,
+	LEAKS_QUERY_KEY,
 	linkBankRequest,
 	unlinkBankAccountRequest,
 } from "@/lib/api/requests";
@@ -160,6 +161,7 @@ export default function DashboardPage() {
 					queryClient.invalidateQueries({
 						queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
 					}),
+					queryClient.invalidateQueries({ queryKey: [LEAKS_QUERY_KEY] }),
 				]);
 				toast.success("Bank account unlinked successfully");
 				setSelectedAccountForUnlink(null);
@@ -237,6 +239,9 @@ export default function DashboardPage() {
 							}),
 							queryClient.invalidateQueries({
 								queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
+							}),
+							queryClient.invalidateQueries({
+								queryKey: [LEAKS_QUERY_KEY],
 							}),
 						]);
 						toast.success("Bank account linked successfully");

@@ -386,3 +386,44 @@ export interface SpendingInsightsApiResponse {
   data: SpendingInsightItem[]
   meta: SpendingInsightsMeta
 }
+
+/** GET /leaks - UI hints per leak */
+export interface LeakItemUi {
+  statusColor: string
+  icon: string
+}
+
+/** GET /leaks - single leak item */
+export interface LeakItem {
+  id: string
+  label: string
+  description: string
+  amount: number
+  date: string
+  type: "VULNERABILITY" | "BANK_CHARGE" | "WATCHLIST"
+  ui: LeakItemUi
+}
+
+/** GET /leaks - pagination in meta */
+export interface LeaksPagination {
+  limit: number
+  skip: number
+  hasMore: boolean
+  total: number
+}
+
+/** GET /leaks - meta */
+export interface LeaksMeta {
+  totalLeaked: number
+  vulnerabilitiesCount: number
+  month: number
+  year: number
+  pagination: LeaksPagination
+}
+
+/** GET /leaks response */
+export interface LeaksApiResponse {
+  success: boolean
+  data: LeakItem[]
+  meta: LeaksMeta
+}

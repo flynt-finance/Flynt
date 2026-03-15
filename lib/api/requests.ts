@@ -45,6 +45,7 @@ import type {
   TransactionsQueryParams,
   TransactionSummaryApiResponse,
   SpendingInsightsApiResponse,
+  LeaksApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -101,6 +102,16 @@ export function useSpendingInsightsQuery() {
     "/categories/spending-insights",
     { queryKey: [SPENDING_INSIGHTS_QUERY_KEY] }
   );
+}
+
+/** Leaks query key for invalidations */
+export const LEAKS_QUERY_KEY = "leaks";
+
+/** GET /leaks */
+export function useLeaksQuery() {
+  return useCustomFetchQuery<LeaksApiResponse>("/leaks", {
+    queryKey: [LEAKS_QUERY_KEY],
+  });
 }
 
 /** Transactions query key for cache */
