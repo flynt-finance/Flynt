@@ -356,3 +356,33 @@ export interface TransactionSummaryData {
 /** GET /transactions/summary response */
 export type TransactionSummaryApiResponse =
   TypeApiResponse<TransactionSummaryData>
+
+/** GET /categories/spending-insights - UI hints per category */
+export interface SpendingInsightItemUi {
+  backgroundColor: string
+  icon: string
+  statusColor: string
+}
+
+/** GET /categories/spending-insights - single category insight */
+export interface SpendingInsightItem {
+  label: string
+  amount: number
+  percentage: number
+  trend: number
+  isIncrease: boolean
+  ui: SpendingInsightItemUi
+}
+
+/** GET /categories/spending-insights - meta */
+export interface SpendingInsightsMeta {
+  month: number
+  year: number
+}
+
+/** GET /categories/spending-insights response */
+export interface SpendingInsightsApiResponse {
+  success: boolean
+  data: SpendingInsightItem[]
+  meta: SpendingInsightsMeta
+}

@@ -27,9 +27,11 @@ import FinancialLeaksSystem from "@/components/dashboard/FinancialLeak";
 import {
 	useLinkedAccountsQuery,
 	useTransactionsQuery,
+	useSpendingInsightsQuery,
 	LINKED_ACCOUNTS_QUERY_KEY,
 	LIQUIDITY_QUERY_KEY,
 	TRANSACTIONS_QUERY_KEY,
+	SPENDING_INSIGHTS_QUERY_KEY,
 	linkBankRequest,
 	unlinkBankAccountRequest,
 } from "@/lib/api/requests";
@@ -37,7 +39,20 @@ import type {
 	LinkedAccountsApiResponse,
 	Transaction,
 	TransactionsApiResponse,
+	SpendingInsightItem,
+	SpendingInsightsApiResponse,
 } from "@/lib/api/types";
+import {
+	ShoppingBag,
+	Car,
+	Utensils,
+	Tv,
+	Smile,
+	ShieldCheck,
+	AlertTriangle,
+	CircleDollarSign,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useNigerianBanks } from "@/lib/banks/nigerian-banks";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useGlobalLoader } from "@/contexts/GlobalLoaderContext";
@@ -49,6 +64,41 @@ const getLastFourFromAccountNumber = (accountNumber: string): string => {
 	if (digits.length >= 4) return digits.slice(-4);
 	return accountNumber.slice(-4) || "****";
 };
+
+/** Map API spending insight icon name to Lucide component */
+const SPENDING_INSIGHT_ICON_MAP: Record<string, LucideIcon> = {
+	ShoppingBag,
+	Car,
+	Utensils,
+	Tv,
+	Smile,
+	ShieldCheck,
+	AlertTriangle,
+};
+
+const SPENDING_INSIGHT_DEFAULT_ICON = CircleDollarSign;
+
+/** Map API spending insight icon name to CategoryCard color */
+const SPENDING_INSIGHT_COLOR_MAP: Record<
+	string,
+	"blue" | "amber" | "purple" | "cyan" | "orange" | "sky"
+> = {
+	ShoppingBag: "amber",
+	Car: "blue",
+	Utensils: "orange",
+	Tv: "cyan",
+	Smile: "purple",
+	ShieldCheck: "sky",
+	AlertTriangle: "orange",
+};
+
+const SPENDING_INSIGHT_DEFAULT_COLOR:
+	| "blue"
+	| "amber"
+	| "purple"
+	| "cyan"
+	| "orange"
+	| "sky" = "blue";
 
 export default function DashboardPage() {
 	const queryClient = useQueryClient();
@@ -107,6 +157,9 @@ export default function DashboardPage() {
 					}),
 					queryClient.invalidateQueries({ queryKey: [LIQUIDITY_QUERY_KEY] }),
 					queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }),
+					queryClient.invalidateQueries({
+						queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
+					}),
 				]);
 				toast.success("Bank account unlinked successfully");
 				setSelectedAccountForUnlink(null);
@@ -182,6 +235,9 @@ export default function DashboardPage() {
 							queryClient.invalidateQueries({
 								queryKey: [TRANSACTIONS_QUERY_KEY],
 							}),
+							queryClient.invalidateQueries({
+								queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
+							}),
 						]);
 						toast.success("Bank account linked successfully");
 						return;
@@ -208,69 +264,18 @@ export default function DashboardPage() {
 		connect.open();
 	}, [user?.name, user?.email, queryClient, showLoader, hideLoader]);
 
-	// Category icons
-	const categoryIcons = {
-		fixedObligations: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-				/>
-			</svg>
-		),
-		dailyEssentials: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-				/>
-			</svg>
-		),
-		lifestyle: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-				/>
-			</svg>
-		),
-		subscriptions: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-				/>
-			</svg>
-		),
-		financialLeakage: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-				/>
-			</svg>
-		),
-		savings: (
-			<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeWidth={2}
-					d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-				/>
-			</svg>
-		),
-	};
+	const {
+		data: spendingInsightsResponse,
+		isLoading: isSpendingInsightsLoading,
+	} = useSpendingInsightsQuery();
+
+	const spendingInsightsList = useMemo((): SpendingInsightItem[] => {
+		const res = spendingInsightsResponse as
+			| SpendingInsightsApiResponse
+			| undefined;
+		if (!res?.success || !Array.isArray(res?.data)) return [];
+		return res.data;
+	}, [spendingInsightsResponse]);
 
 	const transactionsRes = transactionsResponse as
 		| TransactionsApiResponse
@@ -397,59 +402,55 @@ export default function DashboardPage() {
 
 					{/* Spending Breakdown */}
 					<div>
-						{/* <h2 className="text-lg font-semibold text-text-primary mb-4">
-              Spending Breakdown
-            </h2> */}
-
 						<div className="grid gap-4 md:grid-cols-3">
-							<CategoryCard
-								title="Fixed Obligations"
-								amount={98000}
-								percentage={32}
-								trend={{ value: "8.2%", isPositive: true }}
-								icon={categoryIcons.fixedObligations}
-								color="blue"
-							/>
-							<CategoryCard
-								title="Daily Essentials"
-								amount={75000}
-								percentage={32}
-								trend={{ value: "8.2%", isPositive: true }}
-								icon={categoryIcons.dailyEssentials}
-								color="amber"
-							/>
-							<CategoryCard
-								title="Lifestyle"
-								amount={75000}
-								percentage={32}
-								trend={{ value: "8.2%", isPositive: true }}
-								icon={categoryIcons.lifestyle}
-								color="purple"
-							/>
-							<CategoryCard
-								title="Subscriptions"
-								amount={98000}
-								percentage={32}
-								trend={{ value: "8.2%", isPositive: true }}
-								icon={categoryIcons.subscriptions}
-								color="cyan"
-							/>
-							<CategoryCard
-								title="Financial Leakage"
-								amount={75000}
-								percentage={32}
-								trend={{ value: "8.2%", isPositive: true }}
-								icon={categoryIcons.financialLeakage}
-								color="orange"
-							/>
-							<CategoryCard
-								title="Savings & Invest"
-								amount={17000}
-								percentage={32}
-								trend={{ value: "0%", isPositive: false }}
-								icon={categoryIcons.savings}
-								color="sky"
-							/>
+							{isSpendingInsightsLoading &&
+								Array.from({ length: 6 }).map((_, i) => (
+									<div
+										key={i}
+										className="rounded-xl border border-border-subtle p-5 animate-pulse"
+										aria-hidden
+									>
+										<div className="flex items-center justify-between mb-4">
+											<div className="h-10 w-10 rounded-xl bg-border-subtle" />
+											<div className="h-4 w-12 rounded bg-border-subtle" />
+										</div>
+										<div className="h-4 w-24 rounded bg-border-subtle mb-2" />
+										<div className="h-8 w-20 rounded bg-border-subtle mb-2" />
+										<div className="h-3 w-16 rounded bg-border-subtle" />
+									</div>
+								))}
+							{!isSpendingInsightsLoading &&
+								spendingInsightsList.length > 0 &&
+								spendingInsightsList.map((item) => {
+									const IconComponent =
+										SPENDING_INSIGHT_ICON_MAP[item.ui.icon] ??
+										SPENDING_INSIGHT_DEFAULT_ICON;
+									const color =
+										SPENDING_INSIGHT_COLOR_MAP[item.ui.icon] ??
+										SPENDING_INSIGHT_DEFAULT_COLOR;
+									return (
+										<CategoryCard
+											key={item.label}
+											title={item.label}
+											amount={item.amount}
+											percentage={item.percentage}
+											trend={{
+												value: `${Math.abs(item.trend)}%`,
+												isPositive: item.isIncrease,
+											}}
+											icon={<IconComponent className="h-5 w-5" />}
+											color={color}
+										/>
+									);
+								})}
+							{!isSpendingInsightsLoading &&
+								spendingInsightsList.length === 0 && (
+									<div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border-primary bg-bg-elevated py-12 px-4 text-center">
+										<p className="text-sm font-medium text-text-muted">
+											No spending insights for this period.
+										</p>
+									</div>
+								)}
 						</div>
 					</div>
 

@@ -44,6 +44,7 @@ import type {
   TransactionsApiResponse,
   TransactionsQueryParams,
   TransactionSummaryApiResponse,
+  SpendingInsightsApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -88,6 +89,17 @@ export function useLiquidityQuery() {
   return useCustomFetchQuery<LiquidityApiResponse>(
     "/banking/liquidity?sync=true",
     { queryKey: [LIQUIDITY_QUERY_KEY] }
+  );
+}
+
+/** Spending insights query key for invalidations */
+export const SPENDING_INSIGHTS_QUERY_KEY = "categories/spending-insights";
+
+/** GET /categories/spending-insights */
+export function useSpendingInsightsQuery() {
+  return useCustomFetchQuery<SpendingInsightsApiResponse>(
+    "/categories/spending-insights",
+    { queryKey: [SPENDING_INSIGHTS_QUERY_KEY] }
   );
 }
 
