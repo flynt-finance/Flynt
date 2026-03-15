@@ -4,12 +4,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Loader2, Database, CheckCircle2 } from "lucide-react";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 export default function OnboardingSuccessPage() {
 	const router = useRouter();
+	const fetchUser = useAuthStore((s) => s.fetchUser);
 	const [stage, setStage] = useState<"sync" | "loading" | "ready">("sync");
 	const [logIndex, setLogIndex] = useState(0);
 	const timers = useRef<number[]>([]);
+
+	useEffect(() => {
+		fetchUser();
+	}, [fetchUser]);
 
 	// Simulation logs to show FlInitializing Protocolynt's deep integration
 	const syncLogs = useMemo(

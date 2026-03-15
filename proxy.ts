@@ -7,6 +7,8 @@ import type { NextRequest } from "next/server";
 const AUTH_TOKEN_KEY = "flynt_token";
 const REGISTER_DATA_KEY = "flynt_register_data";
 const FLYNT_INITIAL_USER_COOKIE = "flynt_initial_user";
+/** One-time cookie set by client after fetchUser; proxy applies it to initial user then removes it. */
+const FLYNT_UPDATED_USER_COOKIE = "flynt_updated_user";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 /** Same as auth token (7 days) so /auth/me runs once per session. */
 const INITIAL_USER_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -59,7 +61,7 @@ const hasValidRegisterData = (request: NextRequest): boolean => {
   }
 };
 
-/** Clears auth token and initial-user cookie (server-side; required for httpOnly cookie). */
+/** Clears auth token and initial-user / updated-user cookies (server-side). */
 const clearAuthCookies = (response: NextResponse): void => {
   response.cookies.set(AUTH_TOKEN_KEY, "", {
     path: "/",
@@ -70,6 +72,11 @@ const clearAuthCookies = (response: NextResponse): void => {
     path: "/",
     maxAge: 0,
     httpOnly: false,
+    sameSite: "lax",
+  });
+  response.cookies.set(FLYNT_UPDATED_USER_COOKIE, "", {
+    path: "/",
+    maxAge: 0,
     sameSite: "lax",
   });
   console.log("Auth cookies cleared");
@@ -101,6 +108,77 @@ export async function proxy(request: NextRequest) {
     }
     return clearAuthCookies(NextResponse.next());
   }
+
+  const updatedUserCookie = request.cookies.get(FLYNT_UPDATED_USER_COOKIE)?.value;
+  if (updatedUserCookie) {
+    const onboardingCompleted = getOnboardingCompletedFromCookie(updatedUserCookie);
+    if (onboardingCompleted !== undefined) {
+      if (onboardingCompleted !== true && isDashboardPath(pathname)) {
+        const response = NextResponse.redirect(new URL("/onboard", request.url));
+        response.cookies.set(FLYNT_INITIAL_USER_COOKIE, updatedUserCookie, {
+          path: "/",
+          maxAge: INITIAL_USER_COOKIE_MAX_AGE_SECONDS,
+          sameSite: "lax",
+          httpOnly: false,
+        });
+        response.cookies.set(FLYNT_UPDATED_USER_COOKIE, "", {
+          path: "/",
+          maxAge: 0,
+          sameSite: "lax",
+        });
+        return response;
+      }
+      if (onboardingCompleted === true && isOnboardStepperPath(pathname)) {
+        const response = NextResponse.redirect(new URL("/dashboard", request.url));
+        response.cookies.set(FLYNT_INITIAL_USER_COOKIE, updatedUserCookie, {
+          path: "/",
+          maxAge: INITIAL_USER_COOKIE_MAX_AGE_SECONDS,
+          sameSite: "lax",
+          httpOnly: false,
+        });
+        response.cookies.set(FLYNT_UPDATED_USER_COOKIE, "", {
+          path: "/",
+          maxAge: 0,
+          sameSite: "lax",
+        });
+        return response;
+      }
+      if (isAuthPath(pathname)) {
+        const target = onboardingCompleted ? "/dashboard" : "/onboard";
+        const response = NextResponse.redirect(new URL(target, request.url));
+        response.cookies.set(FLYNT_INITIAL_USER_COOKIE, updatedUserCookie, {
+          path: "/",
+          maxAge: INITIAL_USER_COOKIE_MAX_AGE_SECONDS,
+          sameSite: "lax",
+          httpOnly: false,
+        });
+        response.cookies.set(FLYNT_UPDATED_USER_COOKIE, "", {
+          path: "/",
+          maxAge: 0,
+          sameSite: "lax",
+        });
+        return response;
+      }
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-flynt-user", updatedUserCookie);
+      const response = NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+      response.cookies.set(FLYNT_INITIAL_USER_COOKIE, updatedUserCookie, {
+        path: "/",
+        maxAge: INITIAL_USER_COOKIE_MAX_AGE_SECONDS,
+        sameSite: "lax",
+        httpOnly: false,
+      });
+      response.cookies.set(FLYNT_UPDATED_USER_COOKIE, "", {
+        path: "/",
+        maxAge: 0,
+        sameSite: "lax",
+      });
+      return response;
+    }
+  }
+
   const existingUserCookie = request.cookies.get(FLYNT_INITIAL_USER_COOKIE)?.value;
   if (existingUserCookie) {
     const onboardingCompleted = getOnboardingCompletedFromCookie(existingUserCookie);

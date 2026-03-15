@@ -168,7 +168,6 @@ const mapFinancialGoalToApi = (
 export default function OnboardPage() {
 	const router = useRouter();
 	const user = useAuthStore((s) => s.user);
-	const fetchUser = useAuthStore((s) => s.fetchUser);
 	const [phase, setPhase] = useState<Phase>("welcome");
 	const [currentStep, setCurrentStep] = useState(1);
 	const [employmentStatus, setEmploymentStatus] =
@@ -236,7 +235,6 @@ export default function OnboardPage() {
 				try {
 					const response = await onboardingCompleteRequest(payload);
 					if (response?.success) {
-						await fetchUser();
 						router.replace("/onboard/success");
 						return;
 					}
@@ -282,7 +280,6 @@ export default function OnboardPage() {
 		user?.name,
 		user?.email,
 		router,
-		fetchUser,
 	]);
 
 	const canConnectAccount =
@@ -746,8 +743,8 @@ export default function OnboardPage() {
 										disabled={
 											!canConnectAccount || isConnecting || !hasMonoPublicKey
 										}
+										loading={isConnecting}
 										onClick={() => setConnectModalOpen(true)}
-										aria-busy={isConnecting}
 										aria-label={
 											isConnecting ? "Connecting to bank..." : "Connect account"
 										}
