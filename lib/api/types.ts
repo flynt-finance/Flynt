@@ -427,3 +427,81 @@ export interface LeaksApiResponse {
   data: LeakItem[]
   meta: LeaksMeta
 }
+
+/** GET /governance/summary - cycle */
+export interface GovernanceSummaryCycle {
+  start: string
+  end: string
+  label: string
+}
+
+/** GET /governance/summary - metrics */
+export interface GovernanceSummaryMetrics {
+  totalInflow: number
+  totalSpent: number
+  allocatedAmount: number
+  safeToSpend: number
+}
+
+/** GET /governance/summary - single allocation */
+export interface GovernanceAllocationItem {
+  key: string
+  label: string
+  description: string
+  targetPercentage: number
+  targetAmount: number
+  actualAmount: number
+  actualPercentage: number
+}
+
+/** GET /governance/summary - data shape */
+export interface GovernanceSummaryData {
+  cycle: GovernanceSummaryCycle
+  metrics: GovernanceSummaryMetrics
+  allocations: GovernanceAllocationItem[]
+}
+
+/** GET /governance/summary response */
+export type GovernanceSummaryApiResponse =
+  TypeApiResponse<GovernanceSummaryData>
+
+/** POST /governance/allocations payload */
+export interface GovernanceAllocationsPayload {
+  essentials: number
+  discretionary: number
+  savings: number
+}
+
+/** GET /intelligence/credit-score - single factor */
+export interface CreditScoreFactor {
+  score: number
+  weight: number
+  label: string
+}
+
+/** GET /intelligence/credit-score - factors object */
+export interface CreditScoreFactors {
+  spendingBehavior: CreditScoreFactor
+  cashflowHealth: CreditScoreFactor
+  debtExposure: CreditScoreFactor
+}
+
+/** GET /intelligence/credit-score - financial summary */
+export interface CreditScoreFinancialSummary {
+  monthlyInflow: number
+  monthlyOutflow: number
+  currentDebt: number
+}
+
+/** GET /intelligence/credit-score - data shape */
+export interface CreditScoreData {
+  userId: string
+  generatedAt: string
+  score: number
+  rating: string
+  factors: CreditScoreFactors
+  financialSummary: CreditScoreFinancialSummary
+}
+
+/** GET /intelligence/credit-score response */
+export type CreditScoreApiResponse = TypeApiResponse<CreditScoreData>

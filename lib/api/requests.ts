@@ -46,6 +46,9 @@ import type {
   TransactionSummaryApiResponse,
   SpendingInsightsApiResponse,
   LeaksApiResponse,
+  GovernanceSummaryApiResponse,
+  GovernanceAllocationsPayload,
+  CreditScoreApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -101,6 +104,28 @@ export function useSpendingInsightsQuery() {
   return useCustomFetchQuery<SpendingInsightsApiResponse>(
     "/categories/spending-insights",
     { queryKey: [SPENDING_INSIGHTS_QUERY_KEY] }
+  );
+}
+
+/** Governance summary query key for invalidations */
+export const GOVERNANCE_SUMMARY_QUERY_KEY = "governance/summary";
+
+/** GET /governance/summary */
+export function useGovernanceSummaryQuery() {
+  return useCustomFetchQuery<GovernanceSummaryApiResponse>(
+    "/governance/summary",
+    { queryKey: [GOVERNANCE_SUMMARY_QUERY_KEY] }
+  );
+}
+
+/** POST /governance/allocations */
+export function useSaveGovernanceAllocationsMutation() {
+  return useCustomFetchMutation<unknown>(
+    "/governance/allocations",
+    "POST",
+    {
+      invalidateQueries: [[GOVERNANCE_SUMMARY_QUERY_KEY]],
+    }
   );
 }
 
