@@ -41,6 +41,9 @@ import type {
   LinkBankApiResponse,
   UnlinkBankApiResponse,
   LiquidityApiResponse,
+  TransactionsApiResponse,
+  TransactionsQueryParams,
+  TransactionSummaryApiResponse,
 } from "./types";
 
 /** 2FA status query key for invalidations */
@@ -85,6 +88,44 @@ export function useLiquidityQuery() {
   return useCustomFetchQuery<LiquidityApiResponse>(
     "/banking/liquidity?sync=true",
     { queryKey: [LIQUIDITY_QUERY_KEY] }
+  );
+}
+
+/** Transactions query key for cache */
+export const TRANSACTIONS_QUERY_KEY = "transactions";
+
+/** GET /transactions */
+export function useTransactionsQuery(params: TransactionsQueryParams) {
+  const queryParams: Record<string, string | number> = {
+    limit: params.limit,
+    page: params.page,
+  };
+  if (params.type !== undefined && params.type !== "") {
+    queryParams.type = params.type;
+  }
+  if (params.search !== undefined && params.search !== "") {
+    queryParams.search = params.search;
+  }
+  if (params.accountId !== undefined && params.accountId !== "") {
+    queryParams.accountId = params.accountId;
+  }
+  if (params.categoryId !== undefined && params.categoryId !== "") {
+    queryParams.categoryId = params.categoryId;
+  }
+  return useCustomFetchQuery<TransactionsApiResponse>("/transactions", {
+    queryKey: [TRANSACTIONS_QUERY_KEY, queryParams],
+    config: { params: queryParams },
+  });
+}
+
+/** Transactions summary query key for cache */
+export const TRANSACTIONS_SUMMARY_QUERY_KEY = "transactions/summary";
+
+/** GET /transactions/summary */
+export function useTransactionsSummaryQuery() {
+  return useCustomFetchQuery<TransactionSummaryApiResponse>(
+    "/transactions/summary",
+    { queryKey: [TRANSACTIONS_SUMMARY_QUERY_KEY] }
   );
 }
 

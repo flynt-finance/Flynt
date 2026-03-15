@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Connect from "@mono.co/connect.js";
 import InvestmentInsightsModal from "@/components/InvestmentInsightsModal";
-import { Card, Input } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { ConnectBankSecureModal, ConfirmModal } from "@/components/modal";
 import {
 	CategoryCard,
@@ -14,6 +14,7 @@ import {
 	CreditScoreGauge,
 	CreateDebtModal,
 	AccountBreakdownModal,
+	TransactionDetailModal,
 	LinkedAccountsCard,
 	UnlinkAccountModal,
 	DebtDecisionCard,
@@ -25,11 +26,18 @@ import FlyntInsights from "@/components/dashboard/Insights";
 import FinancialLeaksSystem from "@/components/dashboard/FinancialLeak";
 import {
 	useLinkedAccountsQuery,
+	useTransactionsQuery,
 	LINKED_ACCOUNTS_QUERY_KEY,
+	LIQUIDITY_QUERY_KEY,
+	TRANSACTIONS_QUERY_KEY,
 	linkBankRequest,
 	unlinkBankAccountRequest,
 } from "@/lib/api/requests";
-import type { LinkedAccountsApiResponse } from "@/lib/api/types";
+import type {
+	LinkedAccountsApiResponse,
+	Transaction,
+	TransactionsApiResponse,
+} from "@/lib/api/types";
 import { useNigerianBanks } from "@/lib/banks/nigerian-banks";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useGlobalLoader } from "@/contexts/GlobalLoaderContext";
@@ -65,6 +73,11 @@ export default function DashboardPage() {
 	const [isAccountDetailsModalOpen, setIsAccountDetailsModalOpen] =
 		useState(false);
 	const [isUnlinkConfirmOpen, setIsUnlinkConfirmOpen] = useState(false);
+	const [selectedTransaction, setSelectedTransaction] =
+		useState<Transaction | null>(null);
+
+	const { data: transactionsResponse, isLoading: isTransactionsLoading } =
+		useTransactionsQuery({ limit: 15, page: 1 });
 
 	const linkedAccountsDisplay = useMemo((): LinkedAccount[] => {
 		const res = linkedAccountsResponse as LinkedAccountsApiResponse | undefined;
@@ -88,9 +101,13 @@ export default function DashboardPage() {
 		try {
 			const response = await unlinkBankAccountRequest(id);
 			if (response?.success) {
-				await queryClient.invalidateQueries({
-					queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
-				});
+				await Promise.all([
+					queryClient.invalidateQueries({
+						queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+					}),
+					queryClient.invalidateQueries({ queryKey: [LIQUIDITY_QUERY_KEY] }),
+					queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }),
+				]);
 				toast.success("Bank account unlinked successfully");
 				setSelectedAccountForUnlink(null);
 				setIsUnlinkConfirmOpen(false);
@@ -155,9 +172,17 @@ export default function DashboardPage() {
 				try {
 					const response = await linkBankRequest({ monoCode: code });
 					if (response?.success) {
-						await queryClient.invalidateQueries({
-							queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
-						});
+						await Promise.all([
+							queryClient.invalidateQueries({
+								queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+							}),
+							queryClient.invalidateQueries({
+								queryKey: [LIQUIDITY_QUERY_KEY],
+							}),
+							queryClient.invalidateQueries({
+								queryKey: [TRANSACTIONS_QUERY_KEY],
+							}),
+						]);
 						toast.success("Bank account linked successfully");
 						return;
 					}
@@ -247,43 +272,21 @@ export default function DashboardPage() {
 		),
 	};
 
-	const transactions = [
-		{
-			merchant: "Uber Eats",
-			amount: -5000,
-			category: "Food",
-			date: "Jan 28",
-			icon: "🍔",
-		},
-		{
-			merchant: "Jumia Food",
-			amount: -3500,
-			category: "Food",
-			date: "Jan 27",
-			icon: "🍕",
-		},
-		{
-			merchant: "Uber",
-			amount: -2000,
-			category: "Transport",
-			date: "Jan 26",
-			icon: "🚗",
-		},
-		{
-			merchant: "DSTV",
-			amount: -15000,
-			category: "Bills",
-			date: "Jan 23",
-			icon: "📺",
-		},
-		{
-			merchant: "Netflix",
-			amount: -3000,
-			category: "Subscriptions",
-			date: "Jan 22",
-			icon: "🎬",
-		},
-	];
+	const transactionsRes = transactionsResponse as
+		| TransactionsApiResponse
+		| undefined;
+	const transactionsData =
+		transactionsRes?.success && transactionsRes?.data
+			? transactionsRes.data
+			: null;
+	const recentTransactions = transactionsData?.transactions ?? [];
+	const hasRecentTransactions =
+		!isTransactionsLoading &&
+		Array.isArray(recentTransactions) &&
+		recentTransactions.length > 0;
+	const isEmptyRecent =
+		!isTransactionsLoading &&
+		(!transactionsData || recentTransactions.length === 0);
 
 	return (
 		<div className="space-y-6 max-w-7xl mx-auto p-6 pt-8">
@@ -452,7 +455,7 @@ export default function DashboardPage() {
 
 					{/* Recent Transactions */}
 					<Card>
-						<div className="flex items-center justify-between mb-6">
+						<div className="mb-6 flex items-center justify-between">
 							<h2 className="text-lg font-semibold text-text-primary">
 								Recent Transactions
 							</h2>
@@ -464,29 +467,66 @@ export default function DashboardPage() {
 							</Link>
 						</div>
 
-						{/* Search */}
-						<div className="mb-4">
-							<Input
-								type="text"
-								placeholder="Search..."
-								icon={
-									<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						{isTransactionsLoading && (
+							<div className="space-y-3">
+								{[1, 2, 3, 4, 5].map((i) => (
+									<div
+										key={i}
+										className="flex items-center justify-between rounded-lg p-3"
+									>
+										<div className="flex items-center gap-3">
+											<div className="h-10 w-10 shrink-0 rounded-full bg-border-subtle animate-pulse" />
+											<div className="space-y-2">
+												<div className="h-4 w-32 rounded bg-border-subtle animate-pulse" />
+												<div className="h-3 w-20 rounded bg-border-subtle animate-pulse" />
+											</div>
+										</div>
+										<div className="h-5 w-16 rounded bg-border-subtle animate-pulse" />
+									</div>
+								))}
+							</div>
+						)}
+
+						{isEmptyRecent && (
+							<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-primary bg-bg-elevated py-12 px-4 text-center">
+								<div className="mb-4 rounded-2xl border border-green-primary/20 bg-green-primary/10 p-4">
+									<svg
+										className="h-12 w-12 text-green-primary"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										aria-hidden
+									>
 										<path
 											strokeLinecap="round"
 											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+											strokeWidth={1.5}
+											d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
 										/>
 									</svg>
-								}
-							/>
-						</div>
+								</div>
+								<p className="text-base font-bold text-text-primary mb-1">
+									No recent transactions
+								</p>
+								<p className="text-sm text-text-muted">
+									Transactions will appear here once you have activity.
+								</p>
+							</div>
+						)}
 
-						<div className="space-y-3">
-							{transactions.map((txn, i) => (
-								<TransactionItem key={i} {...txn} />
-							))}
-						</div>
+						{hasRecentTransactions && (
+							<div className="space-y-3">
+								{recentTransactions.map((txn) => (
+									<TransactionItem
+										key={txn.id}
+										transaction={txn}
+										onClick={() => {
+											setSelectedTransaction(txn);
+										}}
+									/>
+								))}
+							</div>
+						)}
 					</Card>
 				</div>
 
@@ -714,6 +754,13 @@ export default function DashboardPage() {
 				onClose={() => setBreakdownModal({ ...breakdownModal, isOpen: false })}
 				title={breakdownModal.title}
 				data={breakdownModal.data}
+			/>
+
+			{/* Transaction detail modal */}
+			<TransactionDetailModal
+				isOpen={selectedTransaction !== null}
+				onClose={() => setSelectedTransaction(null)}
+				transaction={selectedTransaction}
 			/>
 
 			{/* Account details modal (view account, then choose to unlink or keep) */}

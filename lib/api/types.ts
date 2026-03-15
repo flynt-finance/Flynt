@@ -269,3 +269,76 @@ export interface OnboardingCompleteResponse {
   data: OnboardingCompleteResponseData
   message: string
 }
+
+/** GET /transactions - category on each transaction */
+export interface TransactionCategory {
+  id: string
+  name: string
+  color: string
+  icon: string
+  type: string | null
+}
+
+/** GET /transactions - single transaction */
+export interface Transaction {
+  id: string
+  amount: number
+  currency: string
+  type: "OUTFLOW" | "INFLOW"
+  narration: string
+  date: string
+  reference: string
+  category: TransactionCategory
+  /** Bank or source name when available (e.g. "ZENITH") */
+  bankName?: string
+  /** Transaction status when available (e.g. "COMPLETED") */
+  status?: string
+}
+
+/** GET /transactions - data shape */
+export interface TransactionsData {
+  transactions: Transaction[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+/** GET /transactions response */
+export type TransactionsApiResponse = TypeApiResponse<TransactionsData>
+
+/** GET /transactions query params */
+export interface TransactionsQueryParams {
+  limit: number
+  page: number
+  type?: "debit" | "credit"
+  search?: string
+  accountId?: string
+  categoryId?: string
+}
+
+/** GET /transactions/summary - inflow/outflow entry */
+export interface TransactionSummaryFlow {
+  label: string
+  amount: number
+  displayAmount: string
+  statusColor: string
+}
+
+/** GET /transactions/summary - meta */
+export interface TransactionSummaryMeta {
+  month: number
+  year: number
+  currency: string
+}
+
+/** GET /transactions/summary - data shape */
+export interface TransactionSummaryData {
+  inflow: TransactionSummaryFlow
+  outflow: TransactionSummaryFlow
+  meta: TransactionSummaryMeta
+}
+
+/** GET /transactions/summary response */
+export type TransactionSummaryApiResponse =
+  TypeApiResponse<TransactionSummaryData>

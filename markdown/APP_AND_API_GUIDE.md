@@ -261,7 +261,7 @@ DELETE /auth/2fa/disable
 Body: { password }
 ```
 
-> **Note:** The 2FA enable and disable modals use `closeOnOverlayClick={false}` while a request is in progress — users cannot accidentally dismiss them by clicking outside or pressing Escape.
+> **Note:** The 2FA enable and disable modals use the shared Modal (see **§12 Modals and Dialogs**) with `closeOnOverlayClick={false}` while a request is in progress — users cannot accidentally dismiss them by clicking outside or pressing Escape.
 
 ---
 
@@ -333,7 +333,75 @@ The `ThemeToggle` component in `components/ThemeToggle.tsx` is a ready-made butt
 
 ---
 
-## 12. Environment Variables
+## 12. Modals and Dialogs
+
+**All overlay dialogs and modals in the app must use the shared Modal component.** Do not build custom overlay/modal markup (e.g. ad-hoc `fixed inset-0` divs, custom backdrop, or duplicate focus/Escape handling). Using the shared system keeps behaviour consistent (accessibility, focus trap, Escape to close, overlay click to close) and avoids drift.
+
+### The shared Modal component
+
+| File                         | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `components/modal/Modal.tsx` | The single base modal implementation used for all dialogs                 |
+| `components/modal/index.ts`  | Exports `Modal`, `ConnectBankSecureModal`, `ConfirmModal`, `AddCardModal` |
+
+**Props:**
+
+| Prop                  | Type                   | Description                                                                                                                                          |
+| --------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `open`                | `boolean`              | Whether the modal is visible                                                                                                                         |
+| `onClose`             | `() => void`           | Called when the user closes (overlay click or Escape)                                                                                                |
+| `title`               | `string` (optional)    | Shown in the header bar                                                                                                                              |
+| `children`            | `ReactNode`            | Main content (scrollable body)                                                                                                                       |
+| `footer`              | `ReactNode` (optional) | Optional footer (e.g. action buttons)                                                                                                                |
+| `ariaLabel`           | `string` (optional)    | Accessible name for the dialog (falls back to `title`)                                                                                               |
+| `contentClassName`    | `string` (optional)    | Extra classes on the inner content wrapper (e.g. `max-w-md`)                                                                                         |
+| `closeOnOverlayClick` | `boolean` (optional)   | If `false`, overlay click and Escape do not close. Default `true`. Use `false` while a request is in progress so the user cannot dismiss by mistake. |
+
+**Behaviour:**
+
+- Renders a backdrop, centres the panel, and traps focus when open.
+- Closes on Escape and on backdrop click when `closeOnOverlayClick` is true.
+- Restores focus to the previously focused element on close.
+- Uses theme-aware styles (border, background, text) so it works in light and dark mode.
+
+### How to implement a new modal
+
+1. **Use the shared Modal.** Import `Modal` from `@/components/modal` or `@/components/modal/Modal`.
+2. **Compose your content inside it.** Pass `title`, `children`, and optionally `footer` and `contentClassName`. Do not duplicate overlay, backdrop, or close behaviour.
+3. **Control visibility with state.** The parent holds `open` (or derived from e.g. `selectedItem !== null`) and `onClose` (e.g. clear selection or set `open` to false).
+4. **When a modal should not be dismissible** (e.g. while submitting), set `closeOnOverlayClick={false}` for the duration of the operation.
+
+**Example:**
+
+```tsx
+import Modal from "@/components/modal/Modal";
+
+// In your component:
+const [isOpen, setIsOpen] = useState(false);
+
+<Modal
+	open={isOpen}
+	onClose={() => setIsOpen(false)}
+	title="My dialog"
+	ariaLabel="My dialog"
+	contentClassName="max-w-md"
+>
+	<p>Modal body content here.</p>
+</Modal>;
+```
+
+### Existing modals that use the system
+
+- **ConnectBankSecureModal** — Connect bank (Mono) flow; uses `Modal`.
+- **ConfirmModal** — Confirm/cancel actions (e.g. unlink account); uses `Modal`.
+- **AddCardModal** — Add card flow; uses `Modal`.
+- **TransactionDetailModal** — Transaction details; uses `Modal` from `components/modal/Modal`.
+
+Any new dialog (e.g. detail views, confirmations, forms in an overlay) must be implemented by composing the shared `Modal` in the same way.
+
+---
+
+## 13. Environment Variables
 
 | Variable                       | Used for                 | Where                                         |
 | ------------------------------ | ------------------------ | --------------------------------------------- |
@@ -346,34 +414,34 @@ The waitlist form posts to `/api/waitlist` (a Next.js API route), which forwards
 
 ---
 
-## 13. Key File Reference
+## 14. Key File Reference
 
-| Area                       | File                                                                                                                                                       |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API types                  | `lib/api/types.ts`                                                                                                                                         |
-| API client (Axios)         | `lib/api/client.ts`                                                                                                                                        |
-| API request functions      | `lib/api/requests.ts`                                                                                                                                      |
-| Linked accounts API        | `useLinkedAccountsQuery`, `linkBankRequest`, `unlinkBankAccountRequest`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts` |
-| Liquidity API              | `useLiquidityQuery`, `LIQUIDITY_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                           |
-| Total Aggregated Liquidity | `components/dashboard/TotalAggregatedLiquiditySection.tsx` (uses `LiquidityTerminal` and `useLiquidityQuery`)                                              |
-| Bank logo resolution       | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                                                                       |
-| Global fullscreen loader   | `contexts/GlobalLoaderContext.tsx` (`useGlobalLoader`, `showLoader`, `hideLoader`)                                                                         |
-| Auth cookie helpers        | `lib/auth-cookie.ts`                                                                                                                                       |
-| User auth store            | `stores/use-auth-store.ts`                                                                                                                                 |
-| Theme context              | `contexts/ThemeContext.tsx`                                                                                                                                |
-| Global styles + CSS vars   | `app/globals.css`                                                                                                                                          |
-| Theme toggle button        | `components/ThemeToggle.tsx`                                                                                                                               |
-| Toast theme wrapper        | `components/ThemeAwareToaster.tsx`                                                                                                                         |
-| Form validation            | `lib/validations/auth.ts`                                                                                                                                  |
-| Waitlist validation        | `lib/validations/waitlist.ts`                                                                                                                              |
-| Waitlist API route         | `app/api/waitlist/route.ts`                                                                                                                                |
-| Reusable modal             | `components/modal/Modal.tsx`                                                                                                                               |
-| Providers wrapper          | `components/Providers.tsx`                                                                                                                                 |
-| Dashboard layout           | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                                                                      |
+| Area                                    | File                                                                                                                                                                                                                  |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API types                               | `lib/api/types.ts`                                                                                                                                                                                                    |
+| API client (Axios)                      | `lib/api/client.ts`                                                                                                                                                                                                   |
+| API request functions                   | `lib/api/requests.ts`                                                                                                                                                                                                 |
+| Linked accounts API                     | `useLinkedAccountsQuery`, `linkBankRequest`, `unlinkBankAccountRequest`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                            |
+| Liquidity API                           | `useLiquidityQuery`, `LIQUIDITY_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                                                                                      |
+| Total Aggregated Liquidity              | `components/dashboard/TotalAggregatedLiquiditySection.tsx` (uses `LiquidityTerminal` and `useLiquidityQuery`)                                                                                                         |
+| Bank logo resolution                    | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                                                                                                                                  |
+| Global fullscreen loader                | `contexts/GlobalLoaderContext.tsx` (`useGlobalLoader`, `showLoader`, `hideLoader`)                                                                                                                                    |
+| Auth cookie helpers                     | `lib/auth-cookie.ts`                                                                                                                                                                                                  |
+| User auth store                         | `stores/use-auth-store.ts`                                                                                                                                                                                            |
+| Theme context                           | `contexts/ThemeContext.tsx`                                                                                                                                                                                           |
+| Global styles + CSS vars                | `app/globals.css`                                                                                                                                                                                                     |
+| Theme toggle button                     | `components/ThemeToggle.tsx`                                                                                                                                                                                          |
+| Toast theme wrapper                     | `components/ThemeAwareToaster.tsx`                                                                                                                                                                                    |
+| Form validation                         | `lib/validations/auth.ts`                                                                                                                                                                                             |
+| Waitlist validation                     | `lib/validations/waitlist.ts`                                                                                                                                                                                         |
+| Waitlist API route                      | `app/api/waitlist/route.ts`                                                                                                                                                                                           |
+| Modal system (required for all dialogs) | `components/modal/Modal.tsx` — see **§12 Modals and Dialogs**. All overlay modals must use this component. Exports: `Modal`, `ConnectBankSecureModal`, `ConfirmModal`, `AddCardModal` in `components/modal/index.ts`. |
+| Providers wrapper                       | `components/Providers.tsx`                                                                                                                                                                                            |
+| Dashboard layout                        | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                                                                                                                                 |
 
 ---
 
-## 14. Responsive Design
+## 15. Responsive Design
 
 The dashboard layout is fully responsive:
 
@@ -384,7 +452,7 @@ When building new dashboard pages, use `max-w-7xl mx-auto` for content width and
 
 ---
 
-## 15. App Providers
+## 16. App Providers
 
 `components/Providers.tsx` wraps the entire app in this order:
 
