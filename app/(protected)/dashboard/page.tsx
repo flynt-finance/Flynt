@@ -1,171 +1,302 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import Connect from "@mono.co/connect.js";
 import InvestmentInsightsModal from "@/components/InvestmentInsightsModal";
-import { Card, Input, Button } from "@/components/ui";
-import AddCardModal, {
-  type CardDetails,
-} from "@/components/modal/AddCardModal";
-import useSync from "../../(auth)/flynt/hooks/useSync";
-import SyncAnimation from "../../(auth)/flynt/components/SyncAnimation";
+import { Card } from "@/components/ui";
+import { ConnectBankSecureModal, ConfirmModal } from "@/components/modal";
 import {
   CategoryCard,
   TransactionItem,
-  CreditScoreGauge,
+  CreditHealthSection,
   CreateDebtModal,
   AccountBreakdownModal,
+  TransactionDetailModal,
   LinkedAccountsCard,
   UnlinkAccountModal,
   DebtDecisionCard,
-  VirtualCard,
+  TotalAggregatedLiquiditySection,
   type LinkedAccount,
 } from "@/components/dashboard";
 import { useDebts } from "@/contexts/DebtContext";
-import LiquidityTerminal from "@/components/ui/LiquidityTerminal";
 import FlyntInsights from "@/components/dashboard/Insights";
 import FinancialLeaksSystem from "@/components/dashboard/FinancialLeak";
+import {
+  useLinkedAccountsQuery,
+  useTransactionsQuery,
+  useSpendingInsightsQuery,
+  LINKED_ACCOUNTS_QUERY_KEY,
+  LIQUIDITY_QUERY_KEY,
+  TRANSACTIONS_QUERY_KEY,
+  SPENDING_INSIGHTS_QUERY_KEY,
+  LEAKS_QUERY_KEY,
+  linkBankRequest,
+  unlinkBankAccountRequest,
+} from "@/lib/api/requests";
+import type {
+  LinkedAccountsApiResponse,
+  Transaction,
+  TransactionsApiResponse,
+  SpendingInsightItem,
+  SpendingInsightsApiResponse,
+} from "@/lib/api/types";
+import {
+  ShoppingBag,
+  Car,
+  Utensils,
+  Tv,
+  Smile,
+  ShieldCheck,
+  AlertTriangle,
+  CircleDollarSign,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useNigerianBanks } from "@/lib/banks/nigerian-banks";
+import { useAuthStore } from "@/stores/use-auth-store";
+import { useGlobalLoader } from "@/contexts/GlobalLoaderContext";
+import { showErrorToast } from "@/lib/api/client";
+
+/** Extract last 4 digits from masked account number (e.g. "******3461" -> "3461") */
+const getLastFourFromAccountNumber = (accountNumber: string): string => {
+  const digits = accountNumber.replace(/\D/g, "");
+  if (digits.length >= 4) return digits.slice(-4);
+  return accountNumber.slice(-4) || "****";
+};
+
+/** Map API spending insight icon name to Lucide component */
+const SPENDING_INSIGHT_ICON_MAP: Record<string, LucideIcon> = {
+  ShoppingBag,
+  Car,
+  Utensils,
+  Tv,
+  Smile,
+  ShieldCheck,
+  AlertTriangle,
+};
+
+const SPENDING_INSIGHT_DEFAULT_ICON = CircleDollarSign;
+
+/** Map API spending insight icon name to CategoryCard color */
+const SPENDING_INSIGHT_COLOR_MAP: Record<
+  string,
+  "blue" | "amber" | "purple" | "cyan" | "orange" | "sky"
+> = {
+  ShoppingBag: "amber",
+  Car: "blue",
+  Utensils: "orange",
+  Tv: "cyan",
+  Smile: "purple",
+  ShieldCheck: "sky",
+  AlertTriangle: "orange",
+};
+
+const SPENDING_INSIGHT_DEFAULT_COLOR:
+  | "blue"
+  | "amber"
+  | "purple"
+  | "cyan"
+  | "orange"
+  | "sky" = "blue";
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const { showLoader, hideLoader } = useGlobalLoader();
   const { debts, deleteDebt } = useDebts();
-  const { startSynchronization, isSyncing } = useSync();
+  const { data: linkedAccountsResponse, isLoading: isLinkedAccountsLoading } =
+    useLinkedAccountsQuery();
+  const { getBankLogoUrl } = useNigerianBanks();
+
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showDebtModal, setShowDebtModal] = useState(false);
-  const [showConnectCardModal, setShowConnectCardModal] = useState(false);
+  const [showConnectBankModal, setShowConnectBankModal] = useState(false);
   const [breakdownModal, setBreakdownModal] = useState<{
     isOpen: boolean;
     title: string;
     data: { name: string; icon: string; amount: number }[];
   }>({ isOpen: false, title: "", data: [] });
 
-  const [linkedAccounts, setLinkedAccounts] = useState([
-    {
-      id: "1",
-      name: "GTBank",
-      icon: "/banks/gtbank.jpeg",
-      lastFour: "6789",
-      balance: 450000,
-    },
-    {
-      id: "2",
-      name: "Zenith Bank",
-      icon: "/banks/zenith.svg",
-      lastFour: "1234",
-      balance: 450000,
-    },
-  ]);
-
   const [selectedAccountForUnlink, setSelectedAccountForUnlink] =
     useState<LinkedAccount | null>(null);
-  const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
+  const [isAccountDetailsModalOpen, setIsAccountDetailsModalOpen] =
+    useState(false);
+  const [isUnlinkConfirmOpen, setIsUnlinkConfirmOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
 
-  const handleUnlink = (id: string) => {
-    setLinkedAccounts(linkedAccounts.filter((a) => a.id !== id));
-    setIsUnlinkModalOpen(false);
+  const { data: transactionsResponse, isLoading: isTransactionsLoading } =
+    useTransactionsQuery({ limit: 15, page: 1 });
+
+  const linkedAccountsDisplay = useMemo((): LinkedAccount[] => {
+    const res = linkedAccountsResponse as LinkedAccountsApiResponse | undefined;
+    const raw = res?.success && Array.isArray(res?.data) ? res.data : [];
+    return raw.map((a) => ({
+      id: a.id,
+      name: a.bankName || a.institution,
+      icon: getBankLogoUrl(a.bankName || a.institution),
+      lastFour: getLastFourFromAccountNumber(a.accountNumber),
+      balance: a.balance ?? 0,
+    }));
+  }, [linkedAccountsResponse, getBankLogoUrl]);
+
+  const handleUnlinkConfirm = useCallback(async () => {
+    if (!selectedAccountForUnlink) return;
+    const id = selectedAccountForUnlink.id;
+    showLoader({
+      title: "Unlinking account",
+      subtitle: "Please wait...",
+    });
+    try {
+      const response = await unlinkBankAccountRequest(id);
+      if (response?.success) {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+          }),
+          queryClient.invalidateQueries({ queryKey: [LIQUIDITY_QUERY_KEY] }),
+          queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }),
+          queryClient.invalidateQueries({
+            queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
+          }),
+          queryClient.invalidateQueries({ queryKey: [LEAKS_QUERY_KEY] }),
+        ]);
+        toast.success("Bank account unlinked successfully");
+        setSelectedAccountForUnlink(null);
+        setIsUnlinkConfirmOpen(false);
+        return;
+      }
+      showErrorToast(
+        new Error(response?.message ?? "Could not unlink account."),
+        { title: "Error", message: response?.message ?? "Please try again." },
+      );
+    } catch (err) {
+      showErrorToast(err, {
+        title: "Error",
+        message: "Could not unlink bank account. Please try again.",
+      });
+    } finally {
+      hideLoader();
+    }
+  }, [selectedAccountForUnlink, queryClient, showLoader, hideLoader]);
+
+  const handleCloseUnlinkConfirm = useCallback(() => {
+    setIsUnlinkConfirmOpen(false);
     setSelectedAccountForUnlink(null);
+  }, []);
+
+  const handleCloseAccountDetails = useCallback(() => {
+    setIsAccountDetailsModalOpen(false);
+    setSelectedAccountForUnlink(null);
+  }, []);
+
+  const handleUnlinkClick = useCallback(() => {
+    setIsAccountDetailsModalOpen(false);
+    setIsUnlinkConfirmOpen(true);
+  }, []);
+
+  const handleAddAccountClick = () => {
+    setShowConnectBankModal(true);
   };
 
-  // Category icons
-  const categoryIcons = {
-    fixedObligations: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-        />
-      </svg>
-    ),
-    dailyEssentials: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-        />
-      </svg>
-    ),
-    lifestyle: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    ),
-    subscriptions: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-    ),
-    financialLeakage: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
-      </svg>
-    ),
-    savings: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-        />
-      </svg>
-    ),
-  };
+  const handleConnectConfirm = useCallback(() => {
+    setShowConnectBankModal(false);
+    const monoPublicKey = process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY?.trim();
+    if (!monoPublicKey) {
+      showErrorToast(new Error("Mono is not configured."), {
+        title: "Configuration error",
+        message: "Please try again later or contact support.",
+      });
+      return;
+    }
+    const customer = {
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+    };
+    const connect = new Connect({
+      key: monoPublicKey,
+      scope: "auth",
+      data: { customer },
+      onSuccess: async ({ code }: { code: string }) => {
+        showLoader({
+          title: "Linking account",
+          subtitle: "Please wait...",
+        });
+        try {
+          const response = await linkBankRequest({ monoCode: code });
+          if (response?.success) {
+            await Promise.all([
+              queryClient.invalidateQueries({
+                queryKey: [LINKED_ACCOUNTS_QUERY_KEY],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: [LIQUIDITY_QUERY_KEY],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: [TRANSACTIONS_QUERY_KEY],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: [SPENDING_INSIGHTS_QUERY_KEY],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: [LEAKS_QUERY_KEY],
+              }),
+            ]);
+            toast.success("Bank account linked successfully");
+            return;
+          }
+          showErrorToast(
+            new Error(response?.message ?? "Could not link account."),
+            {
+              title: "Error",
+              message: response?.message ?? "Please try again.",
+            },
+          );
+        } catch (err) {
+          showErrorToast(err, {
+            title: "Connection failed",
+            message: "Could not link bank account. Please try again.",
+          });
+        } finally {
+          hideLoader();
+        }
+      },
+      onClose: () => {},
+    });
+    connect.setup();
+    connect.open();
+  }, [user?.name, user?.email, queryClient, showLoader, hideLoader]);
 
-  const transactions = [
-    {
-      merchant: "Uber Eats",
-      amount: -5000,
-      category: "Food",
-      date: "Jan 28",
-      icon: "🍔",
-    },
-    {
-      merchant: "Jumia Food",
-      amount: -3500,
-      category: "Food",
-      date: "Jan 27",
-      icon: "🍕",
-    },
-    {
-      merchant: "Uber",
-      amount: -2000,
-      category: "Transport",
-      date: "Jan 26",
-      icon: "🚗",
-    },
-    {
-      merchant: "DSTV",
-      amount: -15000,
-      category: "Bills",
-      date: "Jan 23",
-      icon: "📺",
-    },
-    {
-      merchant: "Netflix",
-      amount: -3000,
-      category: "Subscriptions",
-      date: "Jan 22",
-      icon: "🎬",
-    },
-  ];
+  const {
+    data: spendingInsightsResponse,
+    isLoading: isSpendingInsightsLoading,
+  } = useSpendingInsightsQuery();
+
+  const spendingInsightsList = useMemo((): SpendingInsightItem[] => {
+    const res = spendingInsightsResponse as
+      | SpendingInsightsApiResponse
+      | undefined;
+    if (!res?.success || !Array.isArray(res?.data)) return [];
+    return res.data;
+  }, [spendingInsightsResponse]);
+
+  const transactionsRes = transactionsResponse as
+    | TransactionsApiResponse
+    | undefined;
+  const transactionsData =
+    transactionsRes?.success && transactionsRes?.data
+      ? transactionsRes.data
+      : null;
+  const recentTransactions = transactionsData?.transactions ?? [];
+  const hasRecentTransactions =
+    !isTransactionsLoading &&
+    Array.isArray(recentTransactions) &&
+    recentTransactions.length > 0;
+  const isEmptyRecent =
+    !isTransactionsLoading &&
+    (!transactionsData || recentTransactions.length === 0);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-6 pt-8">
@@ -174,8 +305,8 @@ export default function DashboardPage() {
         {/* Left: Connect Card & Credit Health Stack */}
         <div className="lg:col-span-12 grid gap-6 md:grid-cols-2">
           <button
-            onClick={() => setShowConnectCardModal(true)}
-            className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-primary/5 border-2 border-dashed border-slate-200 dark:border-white/10 text-text-secondary hover:border-green-primary hover:text-green-primary transition-all group h-32"
+            onClick={() => setShowConnectBankModal(true)}
+            className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-green-primary/5 border-2 border-dashed border-slate-200 dark:border-white/10 text-text-secondary hover:border-green-primary hover:text-green-primary transition-all group h-32 cursor-pointer"
           >
             <div className="h-12 w-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center group-hover:bg-green-primary/10 transition-colors shadow-sm">
               <svg
@@ -202,32 +333,13 @@ export default function DashboardPage() {
             </div>
           </button>
 
-          <Card className="h-32 px-6 flex items-center gap-6">
-            <div className="w-24 shrink-0">
-              <CreditScoreGauge score={660} hideLabels />
-            </div>
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">
-                Credit Health
-              </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter leading-tight">
-                Verified by Nigerian <br /> Credit Bureau
-              </p>
-            </div>
-          </Card>
+          <CreditHealthSection />
         </div>
 
         {/* Intelligence & Liquidity Layer */}
-        {/* Left: Liquidity Terminal */}
+        {/* Left: Total Aggregated Liquidity */}
         <div className="lg:col-span-7">
-          <LiquidityTerminal
-            totalBalance={15750400}
-            connectedBanks={[
-              { name: "Zenith Bank", amount: 8000000, color: "bg-red-600" },
-              { name: "Access Bank", amount: 4750400, color: "bg-orange-500" },
-              { name: "UBA", amount: 3000000, color: "bg-red-800" },
-            ]}
-          />
+          <TotalAggregatedLiquiditySection />
         </div>
 
         {/* Right: Flynt Intelligence Hub */}
@@ -283,65 +395,61 @@ export default function DashboardPage() {
 
           {/* Spending Breakdown */}
           <div>
-            {/* <h2 className="text-lg font-semibold text-text-primary mb-4">
-              Spending Breakdown
-            </h2> */}
-
             <div className="grid gap-4 md:grid-cols-3">
-              <CategoryCard
-                title="Fixed Obligations"
-                amount={98000}
-                percentage={32}
-                trend={{ value: "8.2%", isPositive: true }}
-                icon={categoryIcons.fixedObligations}
-                color="blue"
-              />
-              <CategoryCard
-                title="Daily Essentials"
-                amount={75000}
-                percentage={32}
-                trend={{ value: "8.2%", isPositive: true }}
-                icon={categoryIcons.dailyEssentials}
-                color="amber"
-              />
-              <CategoryCard
-                title="Lifestyle"
-                amount={75000}
-                percentage={32}
-                trend={{ value: "8.2%", isPositive: true }}
-                icon={categoryIcons.lifestyle}
-                color="purple"
-              />
-              <CategoryCard
-                title="Subscriptions"
-                amount={98000}
-                percentage={32}
-                trend={{ value: "8.2%", isPositive: true }}
-                icon={categoryIcons.subscriptions}
-                color="cyan"
-              />
-              <CategoryCard
-                title="Financial Leakage"
-                amount={75000}
-                percentage={32}
-                trend={{ value: "8.2%", isPositive: true }}
-                icon={categoryIcons.financialLeakage}
-                color="orange"
-              />
-              <CategoryCard
-                title="Savings & Invest"
-                amount={17000}
-                percentage={32}
-                trend={{ value: "0%", isPositive: false }}
-                icon={categoryIcons.savings}
-                color="sky"
-              />
+              {isSpendingInsightsLoading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-border-subtle p-5 animate-pulse"
+                    aria-hidden
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-border-subtle" />
+                      <div className="h-4 w-12 rounded bg-border-subtle" />
+                    </div>
+                    <div className="h-4 w-24 rounded bg-border-subtle mb-2" />
+                    <div className="h-8 w-20 rounded bg-border-subtle mb-2" />
+                    <div className="h-3 w-16 rounded bg-border-subtle" />
+                  </div>
+                ))}
+              {!isSpendingInsightsLoading &&
+                spendingInsightsList.length > 0 &&
+                spendingInsightsList.map((item) => {
+                  const IconComponent =
+                    SPENDING_INSIGHT_ICON_MAP[item.ui.icon] ??
+                    SPENDING_INSIGHT_DEFAULT_ICON;
+                  const color =
+                    SPENDING_INSIGHT_COLOR_MAP[item.ui.icon] ??
+                    SPENDING_INSIGHT_DEFAULT_COLOR;
+                  return (
+                    <CategoryCard
+                      key={item.label}
+                      title={item.label}
+                      amount={item.amount}
+                      percentage={item.percentage}
+                      trend={{
+                        value: `${Math.abs(item.trend)}%`,
+                        isPositive: item.isIncrease,
+                      }}
+                      icon={<IconComponent className="h-5 w-5" />}
+                      color={color}
+                    />
+                  );
+                })}
+              {!isSpendingInsightsLoading &&
+                spendingInsightsList.length === 0 && (
+                  <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border-primary bg-bg-elevated py-12 px-4 text-center">
+                    <p className="text-sm font-medium text-text-muted">
+                      No spending insights for this period.
+                    </p>
+                  </div>
+                )}
             </div>
           </div>
 
           {/* Recent Transactions */}
           <Card>
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-text-primary">
                 Recent Transactions
               </h2>
@@ -353,35 +461,73 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {/* Search */}
-            <div className="mb-4">
-              <Input
-                type="text"
-                placeholder="Search..."
-                icon={
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {isTransactionsLoading && (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 shrink-0 rounded-full bg-border-subtle animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 rounded bg-border-subtle animate-pulse" />
+                        <div className="h-3 w-20 rounded bg-border-subtle animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="h-5 w-16 rounded bg-border-subtle animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isEmptyRecent && (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-primary bg-bg-elevated py-12 px-4 text-center">
+                <div className="mb-4 rounded-2xl border border-green-primary/20 bg-green-primary/10 p-4">
+                  <svg
+                    className="h-12 w-12 text-green-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      strokeWidth={1.5}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
-                }
-              />
-            </div>
+                </div>
+                <p className="text-base font-bold text-text-primary mb-1">
+                  No recent transactions
+                </p>
+                <p className="text-sm text-text-muted">
+                  Transactions will appear here once you have activity.
+                </p>
+              </div>
+            )}
 
-            <div className="space-y-3">
-              {transactions.map((txn, i) => (
-                <TransactionItem key={i} {...txn} />
-              ))}
-            </div>
+            {hasRecentTransactions && (
+              <div className="space-y-3">
+                {recentTransactions.map((txn) => (
+                  <TransactionItem
+                    key={txn.id}
+                    transaction={txn}
+                    onClick={() => {
+                      setSelectedTransaction(txn);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 
         {/* Right Column - Cards & Insights */}
         <div className="space-y-6">
-          <VirtualCard
+          {/* Virtual Card */}
+          {/* <VirtualCard
             cards={[
               {
                 id: "1",
@@ -451,20 +597,135 @@ export default function DashboardPage() {
             ]}
           />
 
-          {/* AI Insights */}
+					{/* AI Insights */}
 
           {/* Financial leakages */}
           <FinancialLeaksSystem />
 
           {/* Linked Accounts */}
-          <LinkedAccountsCard
-            accounts={linkedAccounts}
-            onAddAccount={() => {}}
-            onSelectAccount={(account) => {
-              setSelectedAccountForUnlink(account);
-              setIsUnlinkModalOpen(true);
-            }}
-          />
+          {isLinkedAccountsLoading ? (
+            <Card className="p-5">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-bg-elevated border border-border-primary">
+                  <svg
+                    className="w-5 h-5 text-text-primary"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-text-primary tracking-tight">
+                  Linked Accounts
+                </h3>
+              </div>
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-elevated border border-border-primary animate-pulse">
+                  <div className="h-12 w-12 rounded-full bg-border-subtle" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 rounded bg-border-subtle" />
+                    <div className="h-3 w-20 rounded bg-border-subtle" />
+                  </div>
+                  <div className="h-8 w-24 rounded-full bg-border-subtle" />
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-elevated border border-border-primary animate-pulse">
+                  <div className="h-12 w-12 rounded-full bg-border-subtle" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-36 rounded bg-border-subtle" />
+                    <div className="h-3 w-20 rounded bg-border-subtle" />
+                  </div>
+                  <div className="h-8 w-24 rounded-full bg-border-subtle" />
+                </div>
+              </div>
+            </Card>
+          ) : linkedAccountsDisplay.length === 0 ? (
+            <Card className="p-5">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-bg-elevated border border-border-primary">
+                  <svg
+                    className="w-5 h-5 text-text-primary"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-text-primary tracking-tight">
+                  Linked Accounts
+                </h3>
+              </div>
+              <div className="flex flex-col items-center justify-center py-12 px-4 mb-6 rounded-xl bg-bg-elevated border border-dashed border-border-primary text-center">
+                <div className="p-4 rounded-2xl bg-green-primary/10 border border-green-primary/20 mb-4">
+                  <svg
+                    className="w-12 h-12 text-green-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <p className="text-base font-bold text-text-primary mb-1">
+                  No linked accounts yet
+                </p>
+                <p className="text-sm text-text-muted mb-6 max-w-xs">
+                  Connect your bank to see balances and track spending in one
+                  place.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAddAccountClick}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-green-primary hover:bg-green-hover transition-colors focus:outline-none focus:ring-2 focus:ring-green-primary/30 focus:ring-offset-2 focus:ring-offset-bg-primary"
+                  aria-label="Connect bank account"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Connect bank
+                </button>
+              </div>
+            </Card>
+          ) : (
+            <LinkedAccountsCard
+              accounts={linkedAccountsDisplay}
+              onAddAccount={handleAddAccountClick}
+              onSelectAccount={(account) => {
+                setSelectedAccountForUnlink(account);
+                setIsAccountDetailsModalOpen(true);
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -489,45 +750,44 @@ export default function DashboardPage() {
         data={breakdownModal.data}
       />
 
-      {/* Unlink Account Modal */}
-      <UnlinkAccountModal
-        isOpen={isUnlinkModalOpen}
-        onClose={() => setIsUnlinkModalOpen(false)}
-        account={selectedAccountForUnlink}
-        onUnlink={handleUnlink}
+      {/* Transaction detail modal */}
+      <TransactionDetailModal
+        isOpen={selectedTransaction !== null}
+        onClose={() => setSelectedTransaction(null)}
+        transaction={selectedTransaction}
       />
 
-      {/* Connect Card Modal */}
-      <AddCardModal
-        open={showConnectCardModal}
-        onClose={() => setShowConnectCardModal(false)}
-        onConfirm={(cardDetails: CardDetails) => {
-          // Add new bank account to the list
-          const newAccount: LinkedAccount = {
-            id: String(linkedAccounts.length + 1),
-            name: cardDetails.cardholderName,
-            icon: "/banks/gtbank.jpeg",
-            lastFour: cardDetails.cardNumber.slice(-4),
-            balance: 0,
-          };
-          setLinkedAccounts([...linkedAccounts, newAccount]);
-          // Start secure synchronization animation / handshake
-          try {
-            startSynchronization();
-          } catch (err) {
-            // ignore errors here; useSync handles errors internally
-            console.error("Failed to start synchronization", err);
-          }
-        }}
+      {/* Account details modal (view account, then choose to unlink or keep) */}
+      <UnlinkAccountModal
+        isOpen={isAccountDetailsModalOpen}
+        onClose={handleCloseAccountDetails}
+        account={selectedAccountForUnlink}
+        onUnlinkClick={handleUnlinkClick}
       />
-      {/* Sync animation overlay when performing handshake */}
-      {isSyncing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="max-w-md w-full">
-            <SyncAnimation />
-          </div>
-        </div>
-      )}
+
+      {/* Unlink account confirmation */}
+      <ConfirmModal
+        open={isUnlinkConfirmOpen}
+        onClose={handleCloseUnlinkConfirm}
+        title="Unlink account?"
+        subtitle={
+          selectedAccountForUnlink
+            ? `This will remove ${selectedAccountForUnlink.name} from Flynt. You can link it again later.`
+            : ""
+        }
+        confirmLabel="Unlink account"
+        cancelLabel="Cancel"
+        onConfirm={handleUnlinkConfirm}
+        variant="danger"
+      />
+
+      {/* Connect Bank Modal */}
+      <ConnectBankSecureModal
+        open={showConnectBankModal}
+        onClose={() => setShowConnectBankModal(false)}
+        onConfirm={handleConnectConfirm}
+        primaryButtonText="Connect"
+      />
     </div>
   );
 }

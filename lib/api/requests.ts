@@ -28,16 +28,172 @@ import type {
   TwoFaConfirmPayload,
   TwoFaConfirmResponseData,
   TwoFaStatusResponseData,
-  TwoFaDisablePayload,
   TwoFaDisableResponseData,
   TwoFaVerifyLoginPayload,
   TwoFaVerifyLoginResponseData,
   SocialAuthPayload,
   SocialAuthResponseData,
+  OnboardingCompletePayload,
+  OnboardingCompleteResponse,
+  LinkedAccountsApiResponse,
+  LinkBankPayload,
+  LinkBankApiResponse,
+  UnlinkBankApiResponse,
+  LiquidityApiResponse,
+  TransactionsApiResponse,
+  TransactionsQueryParams,
+  TransactionSummaryApiResponse,
+  SpendingInsightsApiResponse,
+  LeaksApiResponse,
+  GovernanceSummaryData,
+  CreditScoreData,
 } from "./types";
 
 /** 2FA status query key for invalidations */
 export const TWO_FA_STATUS_QUERY_KEY = "2fa-status";
+
+/** Linked accounts query key for invalidations */
+export const LINKED_ACCOUNTS_QUERY_KEY = "banking/linked-accounts";
+
+/** GET /banking/linked-accounts */
+export function useLinkedAccountsQuery() {
+  return useCustomFetchQuery<LinkedAccountsApiResponse>(
+    "/banking/linked-accounts",
+    { queryKey: [LINKED_ACCOUNTS_QUERY_KEY] }
+  );
+}
+
+/** POST /banking/link */
+export async function linkBankRequest(
+  body: LinkBankPayload
+): Promise<LinkBankApiResponse> {
+  return customFetch<LinkBankApiResponse>("/banking/link", {
+    method: "post",
+    body,
+  });
+}
+
+/** DELETE /banking/linked-accounts/:id */
+export async function unlinkBankAccountRequest(
+  id: string
+): Promise<UnlinkBankApiResponse> {
+  return customFetch<UnlinkBankApiResponse>(
+    `/banking/linked-accounts/${id}`,
+    { method: "delete" }
+  );
+}
+
+/** Liquidity query key for invalidations */
+export const LIQUIDITY_QUERY_KEY = "banking/liquidity";
+
+/** GET /banking/liquidity?sync=true */
+export function useLiquidityQuery() {
+  return useCustomFetchQuery<LiquidityApiResponse>(
+    "/banking/liquidity?sync=true",
+    { queryKey: [LIQUIDITY_QUERY_KEY] }
+  );
+}
+
+/** Credit score query key for invalidations */
+export const CREDIT_SCORE_QUERY_KEY = "intelligence/credit-score";
+
+/** GET /intelligence/credit-score - returns ApiResponse with data as inner payload */
+export function useCreditScoreQuery() {
+  return useCustomFetchQuery<CreditScoreData>(
+    "/intelligence/credit-score",
+    { queryKey: [CREDIT_SCORE_QUERY_KEY] }
+  );
+}
+
+/** Spending insights query key for invalidations */
+export const SPENDING_INSIGHTS_QUERY_KEY = "categories/spending-insights";
+
+/** GET /categories/spending-insights */
+export function useSpendingInsightsQuery() {
+  return useCustomFetchQuery<SpendingInsightsApiResponse>(
+    "/categories/spending-insights",
+    { queryKey: [SPENDING_INSIGHTS_QUERY_KEY] }
+  );
+}
+
+/** Governance summary query key for invalidations */
+export const GOVERNANCE_SUMMARY_QUERY_KEY = "governance/summary";
+
+/** GET /governance/summary */
+export function useGovernanceSummaryQuery() {
+  return useCustomFetchQuery<GovernanceSummaryData>(
+    "/governance/summary",
+    { queryKey: [GOVERNANCE_SUMMARY_QUERY_KEY] }
+  );
+}
+
+/** POST /governance/allocations */
+export function useSaveGovernanceAllocationsMutation() {
+  return useCustomFetchMutation<unknown>(
+    "/governance/allocations",
+    "POST",
+    {
+      invalidateQueries: [[GOVERNANCE_SUMMARY_QUERY_KEY]],
+    }
+  );
+}
+
+/** Leaks query key for invalidations */
+export const LEAKS_QUERY_KEY = "leaks";
+
+/** GET /leaks */
+export function useLeaksQuery() {
+  return useCustomFetchQuery<LeaksApiResponse>("/leaks", {
+    queryKey: [LEAKS_QUERY_KEY],
+  });
+}
+
+/** Transactions query key for cache */
+export const TRANSACTIONS_QUERY_KEY = "transactions";
+
+/** GET /transactions */
+export function useTransactionsQuery(params: TransactionsQueryParams) {
+  const queryParams: Record<string, string | number> = {
+    limit: params.limit,
+    page: params.page,
+  };
+  if (params.type !== undefined) {
+    queryParams.type = params.type;
+  }
+  if (params.search !== undefined && params.search !== "") {
+    queryParams.search = params.search;
+  }
+  if (params.accountId !== undefined && params.accountId !== "") {
+    queryParams.accountId = params.accountId;
+  }
+  if (params.categoryId !== undefined && params.categoryId !== "") {
+    queryParams.categoryId = params.categoryId;
+  }
+  if (params.startDate !== undefined && params.startDate !== "") {
+    queryParams.startDate = params.startDate;
+  }
+  if (params.endDate !== undefined && params.endDate !== "") {
+    queryParams.endDate = params.endDate;
+  }
+  if (params.orderBy !== undefined) {
+    queryParams.orderBy = params.orderBy;
+  }
+  return useCustomFetchQuery<TransactionsApiResponse>("/transactions", {
+    queryKey: [TRANSACTIONS_QUERY_KEY, queryParams],
+    config: { params: queryParams },
+  });
+}
+
+/** Transactions summary query key for cache */
+export const TRANSACTIONS_SUMMARY_QUERY_KEY = "transactions/summary";
+
+/** GET /transactions/summary */
+export function useTransactionsSummaryQuery() {
+  return useCustomFetchQuery<TransactionSummaryApiResponse>(
+    "/transactions/summary",
+    { queryKey: [TRANSACTIONS_SUMMARY_QUERY_KEY] }
+  );
+}
 
 /** Example: GET /example - add response type in types.ts when you have a real endpoint */
 export const EXAMPLE_QUERY_KEY = "example";
@@ -180,6 +336,16 @@ export async function socialAuthRequest(
   body: SocialAuthPayload
 ): Promise<TypeApiResponse<SocialAuthResponseData>> {
   return customFetch<TypeApiResponse<SocialAuthResponseData>>("/auth/social", {
+    method: "post",
+    body,
+  });
+}
+
+/** POST /onboarding/complete */
+export async function onboardingCompleteRequest(
+  body: OnboardingCompletePayload
+): Promise<OnboardingCompleteResponse> {
+  return customFetch<OnboardingCompleteResponse>("/onboarding/complete", {
     method: "post",
     body,
   });

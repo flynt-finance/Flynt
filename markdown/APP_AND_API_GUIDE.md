@@ -16,13 +16,15 @@ NEXT_PUBLIC_API_URL=https://your-api-url.com
 
 ### Pages and who can access them
 
-| Area          | Routes                                              | Who can access        |
-| ------------- | --------------------------------------------------- | --------------------- |
-| **Public**    | `/`, `/waitlist`                                    | Everyone              |
-| **Auth only** | `/login`, `/register`, `/verify-email`, `/onboard`  | Logged-out users only |
-| **Protected** | `/dashboard`, `/dashboard/*`, `/onboarding/success` | Logged-in users only  |
+| Area          | Routes                                                       | Who can access        |
+| ------------- | ------------------------------------------------------------ | --------------------- |
+| **Public**    | `/`, `/waitlist`                                             | Everyone              |
+| **Auth only** | `/login`, `/register`, `/verify-email`                       | Logged-out users only |
+| **Protected** | `/dashboard`, `/dashboard/*`, `/onboard`, `/onboard/success` | Logged-in users only  |
 
-Unauthenticated users who try to visit a protected page are automatically redirected to login. Logged-in users who visit auth pages are redirected to the dashboard. This is handled in **middleware** using the stored auth token.
+Unauthenticated users who try to visit a protected page are automatically redirected to login. Logged-in users who visit auth pages are redirected to the dashboard or to `/onboard` if they have not completed onboarding.
+
+**Onboarding gate:** Logged-in users with **onboarding not completed** are redirected to `/onboard` when they try to access the dashboard (or other dashboard routes). Logged-in users with **onboarding completed** are not allowed on the onboard stepper (`/onboard`) and are redirected to the dashboard; they can still hit `/onboard/success` once after completing (then that page redirects to the dashboard). This is enforced in **middleware** (proxy) and optionally in layout components.
 
 ---
 
@@ -76,12 +78,12 @@ The error format from the Flynt backend looks like this:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "message": "Validation failed",
-    "code": "VALIDATION_ERROR",
-    "details": ["Please provide a valid phone number"]
-  }
+	"success": false,
+	"error": {
+		"message": "Validation failed",
+		"code": "VALIDATION_ERROR",
+		"details": ["Please provide a valid phone number"]
+	}
 }
 ```
 
@@ -97,11 +99,11 @@ Use this for a single call from an event handler, like submitting a form.
 
 ```ts
 const res = await customFetch<TypeApiResponse<LoginResponseData>>(
-  "/auth/login",
-  {
-    method: "post",
-    body: { email, password },
-  },
+	"/auth/login",
+	{
+		method: "post",
+		body: { email, password },
+	}
 );
 ```
 
@@ -111,7 +113,7 @@ Use this when you want to load and cache data in a component (e.g. user profile,
 
 ```ts
 const { data, isLoading, refetch } =
-  useCustomFetchQuery<MyData>("/some-endpoint");
+	useCustomFetchQuery<MyData>("/some-endpoint");
 ```
 
 Returns the standard React Query result — `data`, `isLoading`, `error`, `refetch`, etc.
@@ -122,14 +124,14 @@ Use this for POST, PUT, PATCH, or DELETE calls — typically form submissions.
 
 ```ts
 const { mutate, isPending } = useCustomFetchMutation<MyData>(
-  "/some-endpoint",
-  "post",
-  {
-    onSuccess: (data) => {
-      /* handle success */
-    },
-    invalidateQueries: [createQueryKey("some-endpoint")],
-  },
+	"/some-endpoint",
+	"post",
+	{
+		onSuccess: (data) => {
+			/* handle success */
+		},
+		invalidateQueries: [createQueryKey("some-endpoint")],
+	}
 );
 ```
 
@@ -155,6 +157,19 @@ createQueryKey("users", { id }); // → ["users", { id }]
    - For form submissions or mutations → use `useCustomFetchMutation`
 
 Use the path only (e.g. `/users/profile`) — the base URL is prepended automatically.
+
+### Banking / Linked accounts
+
+- **`GET /banking/linked-accounts`** — Returns the list of bank accounts linked to the current user. Requires auth (Bearer token). Response shape: `{ success: true, data: LinkedAccount[] }`. Each `LinkedAccount` includes `id`, `userId`, `bankName`, `accountNumber` (masked, e.g. `******3461`), `monoAccountId`, `balance`, `currency`, `institution`, `isActive`, `createdAt`, `updatedAt`.
+- The dashboard uses this for the **Linked Accounts** section. Use the hook **`useLinkedAccountsQuery()`** from `lib/api/requests.ts`; invalidate with **`LINKED_ACCOUNTS_QUERY_KEY`** after linking or unlinking.
+- **`POST /banking/link`** — Links a bank account after the user completes Mono Connect. Body: `{ monoCode: string }`. Response: `{ success: true, data: LinkedAccount, message }`. Use **`linkBankRequest({ monoCode })`**; after success, invalidate `LINKED_ACCOUNTS_QUERY_KEY` so the list refetches.
+- **`DELETE /banking/linked-accounts/:id`** — Unlinks a bank account. Response: `{ success: true, data: { success: true }, message }`. Use **`unlinkBankAccountRequest(id)`**; after success, invalidate `LINKED_ACCOUNTS_QUERY_KEY`.
+- Bank logos are resolved from the [Nigerian banks API](https://supermx1.github.io/nigerian-banks-api/data.json): the app fetches `data.json` (cached) and uses **`getBankLogoUrl(bankName)`** from `lib/banks/nigerian-banks.ts` to map `bankName`/`institution` to logo URLs (`https://supermx1.github.io/nigerian-banks-api/logos/{slug}.png`). Use the **`useNigerianBanks()`** hook for reactive logo resolution in components.
+
+### Banking / Liquidity
+
+- **`GET /banking/liquidity?sync=true`** — Returns aggregated liquidity across linked accounts. Requires auth. Response shape: `{ success: true, data: { totalBalance, currency, accounts: LiquidityAccount[], isLiveSynced } }`. Each `LiquidityAccount` has `id`, `bankName`, `accountNumber`, `balance`, `currency`, `logo`.
+- The dashboard **Total Aggregated Liquidity** section uses **`useLiquidityQuery()`** from `lib/api/requests.ts`. The component **`TotalAggregatedLiquiditySection`** (`components/dashboard/TotalAggregatedLiquiditySection.tsx`) fetches this data, shows a loading skeleton or empty state when there are no accounts, and renders **`LiquidityTerminal`** with the balance and account breakdown when data is available. Invalidate with **`LIQUIDITY_QUERY_KEY`** if you add a refresh action.
 
 ---
 
@@ -184,6 +199,15 @@ A short-lived cookie (15 minutes) used to pass the user's email and name from th
 
 `clearAllAuthStorage()` wipes the token, registration data, `sessionStorage`, and `localStorage` in one call. Use this after email verification so the user is fully signed out before redirecting to login.
 
+### Initial user cookie (`flynt_initial_user`) and proxy
+
+The middleware (proxy in `proxy.ts`) runs on protected and auth routes. When the user has a valid auth token:
+
+- **If the `flynt_initial_user` cookie is missing** (e.g. first request after login): the proxy calls `GET /auth/me`, gets the user, encodes it, sets the `flynt_initial_user` cookie (7-day expiry, same as the token), and forwards the request with the user in the `x-flynt-user` header.
+- **If the cookie is already present:** the proxy does **not** call `/auth/me`. It reads the user from the cookie, applies redirect logic (onboarding gate, auth vs protected), and passes the cookie value in the `x-flynt-user` header. The user object is therefore only fetched from the API when the cookie was missing; on reload and subsequent requests the app uses the cached user from the cookie.
+
+Layouts (root and dashboard) read the user via `lib/auth-user-header.ts`: either from the `x-flynt-user` request header or from the `flynt_initial_user` cookie, and pass it as `initialUser` to client components.
+
 ### User state (Zustand store)
 
 The auth store in `stores/use-auth-store.ts` holds the current user in memory:
@@ -191,7 +215,7 @@ The auth store in `stores/use-auth-store.ts` holds the current user in memory:
 - `setData({ user })` — update the user in state
 - `fetchUser()` — calls `GET /auth/me` and updates state; clears user and token if the call fails
 
-The dashboard layout calls `fetchUser()` on mount so the sidebar and header always show up-to-date user info.
+The dashboard layout does **not** call `fetchUser()` on mount. The root layout passes `initialUser` to `AuthHydrator`, and the dashboard layout passes `initialUser` to `DashboardLayoutClient`. Those components hydrate the store once with `initialUser` from the server (header/cookie) so that no client-side `/auth/me` request is made on load. The sidebar and header therefore show the user data that was provided by the proxy (from the cookie when present). After a full page reload, the user object in the UI is whatever was in the cookie; it is not re-fetched from the API unless something explicitly calls `fetchUser()` (e.g. after completing onboarding or updating profile).
 
 ---
 
@@ -237,7 +261,7 @@ DELETE /auth/2fa/disable
 Body: { password }
 ```
 
-> **Note:** The 2FA enable and disable modals use `closeOnOverlayClick={false}` while a request is in progress — users cannot accidentally dismiss them by clicking outside or pressing Escape.
+> **Note:** The 2FA enable and disable modals use the shared Modal (see **§12 Modals and Dialogs**) with `closeOnOverlayClick={false}` while a request is in progress — users cannot accidentally dismiss them by clicking outside or pressing Escape.
 
 ---
 
@@ -309,41 +333,115 @@ The `ThemeToggle` component in `components/ThemeToggle.tsx` is a ready-made butt
 
 ---
 
-## 12. Environment Variables
+## 12. Modals and Dialogs
 
-| Variable                       | Used for                | Where                                 |
-| ------------------------------ | ----------------------- | ------------------------------------- |
-| `NEXT_PUBLIC_API_URL`          | API base URL            | Client + server                       |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In          | Client only                           |
-| `WAITLIST_GOOGLE_SCRIPT_URL`   | Waitlist → Google Sheet | Server only (never exposed to client) |
+**All overlay dialogs and modals in the app must use the shared Modal component.** Do not build custom overlay/modal markup (e.g. ad-hoc `fixed inset-0` divs, custom backdrop, or duplicate focus/Escape handling). Using the shared system keeps behaviour consistent (accessibility, focus trap, Escape to close, overlay click to close) and avoids drift.
+
+### The shared Modal component
+
+| File                         | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `components/modal/Modal.tsx` | The single base modal implementation used for all dialogs                 |
+| `components/modal/index.ts`  | Exports `Modal`, `ConnectBankSecureModal`, `ConfirmModal`, `AddCardModal` |
+
+**Props:**
+
+| Prop                  | Type                   | Description                                                                                                                                          |
+| --------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `open`                | `boolean`              | Whether the modal is visible                                                                                                                         |
+| `onClose`             | `() => void`           | Called when the user closes (overlay click or Escape)                                                                                                |
+| `title`               | `string` (optional)    | Shown in the header bar                                                                                                                              |
+| `children`            | `ReactNode`            | Main content (scrollable body)                                                                                                                       |
+| `footer`              | `ReactNode` (optional) | Optional footer (e.g. action buttons)                                                                                                                |
+| `ariaLabel`           | `string` (optional)    | Accessible name for the dialog (falls back to `title`)                                                                                               |
+| `contentClassName`    | `string` (optional)    | Extra classes on the inner content wrapper (e.g. `max-w-md`)                                                                                         |
+| `closeOnOverlayClick` | `boolean` (optional)   | If `false`, overlay click and Escape do not close. Default `true`. Use `false` while a request is in progress so the user cannot dismiss by mistake. |
+
+**Behaviour:**
+
+- Renders a backdrop, centres the panel, and traps focus when open.
+- Closes on Escape and on backdrop click when `closeOnOverlayClick` is true.
+- Restores focus to the previously focused element on close.
+- Uses theme-aware styles (border, background, text) so it works in light and dark mode.
+
+### How to implement a new modal
+
+1. **Use the shared Modal.** Import `Modal` from `@/components/modal` or `@/components/modal/Modal`.
+2. **Compose your content inside it.** Pass `title`, `children`, and optionally `footer` and `contentClassName`. Do not duplicate overlay, backdrop, or close behaviour.
+3. **Control visibility with state.** The parent holds `open` (or derived from e.g. `selectedItem !== null`) and `onClose` (e.g. clear selection or set `open` to false).
+4. **When a modal should not be dismissible** (e.g. while submitting), set `closeOnOverlayClick={false}` for the duration of the operation.
+
+**Example:**
+
+```tsx
+import Modal from "@/components/modal/Modal";
+
+// In your component:
+const [isOpen, setIsOpen] = useState(false);
+
+<Modal
+	open={isOpen}
+	onClose={() => setIsOpen(false)}
+	title="My dialog"
+	ariaLabel="My dialog"
+	contentClassName="max-w-md"
+>
+	<p>Modal body content here.</p>
+</Modal>;
+```
+
+### Existing modals that use the system
+
+- **ConnectBankSecureModal** — Connect bank (Mono) flow; uses `Modal`.
+- **ConfirmModal** — Confirm/cancel actions (e.g. unlink account); uses `Modal`.
+- **AddCardModal** — Add card flow; uses `Modal`.
+- **TransactionDetailModal** — Transaction details; uses `Modal` from `components/modal/Modal`.
+
+Any new dialog (e.g. detail views, confirmations, forms in an overlay) must be implemented by composing the shared `Modal` in the same way.
+
+---
+
+## 13. Environment Variables
+
+| Variable                       | Used for                 | Where                                         |
+| ------------------------------ | ------------------------ | --------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`          | API base URL             | Client + server                               |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In           | Client only                                   |
+| `NEXT_PUBLIC_MONO_PUBLIC_KEY`  | Mono Connect (link bank) | Client only; required for dashboard link flow |
+| `WAITLIST_GOOGLE_SCRIPT_URL`   | Waitlist → Google Sheet  | Server only (never exposed to client)         |
 
 The waitlist form posts to `/api/waitlist` (a Next.js API route), which forwards the submission to a Google Apps Script that writes to a Google Sheet. Set `WAITLIST_GOOGLE_SCRIPT_URL` in `.env.local`.
 
 ---
 
-## 13. Key File Reference
+## 14. Key File Reference
 
-| Area                     | File                                                  |
-| ------------------------ | ----------------------------------------------------- |
-| API types                | `lib/api/types.ts`                                    |
-| API client (Axios)       | `lib/api/client.ts`                                   |
-| API request functions    | `lib/api/requests.ts`                                 |
-| Auth cookie helpers      | `lib/auth-cookie.ts`                                  |
-| User auth store          | `stores/use-auth-store.ts`                            |
-| Theme context            | `contexts/ThemeContext.tsx`                           |
-| Global styles + CSS vars | `app/globals.css`                                     |
-| Theme toggle button      | `components/ThemeToggle.tsx`                          |
-| Toast theme wrapper      | `components/ThemeAwareToaster.tsx`                    |
-| Form validation          | `lib/validations/auth.ts`                             |
-| Waitlist validation      | `lib/validations/waitlist.ts`                         |
-| Waitlist API route       | `app/api/waitlist/route.ts`                           |
-| Reusable modal           | `components/modal/Modal.tsx`                          |
-| Providers wrapper        | `components/Providers.tsx`                            |
-| Dashboard layout         | `app/(protected)/dashboard/DashboardLayoutClient.tsx` |
+| Area                                    | File                                                                                                                                                                                                                  |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API types                               | `lib/api/types.ts`                                                                                                                                                                                                    |
+| API client (Axios)                      | `lib/api/client.ts`                                                                                                                                                                                                   |
+| API request functions                   | `lib/api/requests.ts`                                                                                                                                                                                                 |
+| Linked accounts API                     | `useLinkedAccountsQuery`, `linkBankRequest`, `unlinkBankAccountRequest`, `LINKED_ACCOUNTS_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                            |
+| Liquidity API                           | `useLiquidityQuery`, `LIQUIDITY_QUERY_KEY` in `lib/api/requests.ts`; types in `lib/api/types.ts`                                                                                                                      |
+| Total Aggregated Liquidity              | `components/dashboard/TotalAggregatedLiquiditySection.tsx` (uses `LiquidityTerminal` and `useLiquidityQuery`)                                                                                                         |
+| Bank logo resolution                    | `lib/banks/nigerian-banks.ts` (`useNigerianBanks`, `getBankLogoUrl`)                                                                                                                                                  |
+| Global fullscreen loader                | `contexts/GlobalLoaderContext.tsx` (`useGlobalLoader`, `showLoader`, `hideLoader`)                                                                                                                                    |
+| Auth cookie helpers                     | `lib/auth-cookie.ts`                                                                                                                                                                                                  |
+| User auth store                         | `stores/use-auth-store.ts`                                                                                                                                                                                            |
+| Theme context                           | `contexts/ThemeContext.tsx`                                                                                                                                                                                           |
+| Global styles + CSS vars                | `app/globals.css`                                                                                                                                                                                                     |
+| Theme toggle button                     | `components/ThemeToggle.tsx`                                                                                                                                                                                          |
+| Toast theme wrapper                     | `components/ThemeAwareToaster.tsx`                                                                                                                                                                                    |
+| Form validation                         | `lib/validations/auth.ts`                                                                                                                                                                                             |
+| Waitlist validation                     | `lib/validations/waitlist.ts`                                                                                                                                                                                         |
+| Waitlist API route                      | `app/api/waitlist/route.ts`                                                                                                                                                                                           |
+| Modal system (required for all dialogs) | `components/modal/Modal.tsx` — see **§12 Modals and Dialogs**. All overlay modals must use this component. Exports: `Modal`, `ConnectBankSecureModal`, `ConfirmModal`, `AddCardModal` in `components/modal/index.ts`. |
+| Providers wrapper                       | `components/Providers.tsx`                                                                                                                                                                                            |
+| Dashboard layout                        | `app/(protected)/dashboard/DashboardLayoutClient.tsx`                                                                                                                                                                 |
 
 ---
 
-## 14. Responsive Design
+## 15. Responsive Design
 
 The dashboard layout is fully responsive:
 
@@ -354,13 +452,14 @@ When building new dashboard pages, use `max-w-7xl mx-auto` for content width and
 
 ---
 
-## 15. App Providers
+## 16. App Providers
 
 `components/Providers.tsx` wraps the entire app in this order:
 
 1. **QueryClientProvider** — React Query
 2. **ThemeProvider** — light/dark mode
-3. **DebtProvider** — app-specific state
-4. **ThemeAwareToaster** — Sonner toasts that match the current theme
+3. **GlobalLoaderProvider** — fullscreen loader (title/subtitle, trigger from anywhere via `useGlobalLoader()`)
+4. **DebtProvider** — app-specific state
+5. **ThemeAwareToaster** — Sonner toasts that match the current theme
 
-Order matters: React Query and theme must be outer layers so every component can access them.
+Order matters: React Query and theme must be outer layers so every component can access them. The global loader is used during banking link/unlink and can be triggered from any component inside the provider.

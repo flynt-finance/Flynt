@@ -168,8 +168,11 @@ export interface CustomFetchConfig {
   [key: string]: unknown
 }
 
+/** Query key shape accepted by React Query (useQuery) */
+export type QueryKey = readonly unknown[];
+
 export interface CustomFetchQueryOptions {
-  queryKey?: string[] | (() => string[])
+  queryKey?: QueryKey | (() => QueryKey)
   enabled?: boolean | (() => boolean)
   staleTime?: number
   gcTime?: number
@@ -183,3 +186,325 @@ export interface CustomFetchMutationOptions<T = unknown> {
   invalidateQueries?: string[][]
   config?: CustomFetchConfig
 }
+
+/** POST /onboarding/complete payload */
+export interface OnboardingCompletePayload {
+  employmentStatus: "salaried" | "self-employed" | "freelancer" | "business-owner"
+  incomeRange: "100k-250k" | "250k-500k" | "500k-1m" | "1m+"
+  financialGoal: "control-spending" | "save-money" | "start-investing" | "plan-future"
+  budgetingExperience: "new" | "some-experience" | "experienced"
+  mono: string
+  monoCode: string
+  authorizationConsent: boolean
+}
+
+export interface OnboardingProfile {
+  id: string
+  userId: string
+  employmentStatus: string
+  incomeRange: string
+  financialGoal: string
+  budgetingExperience: string
+  authorizationConsent: boolean
+  isCompleted: boolean
+  completedAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LinkedAccount {
+  id: string
+  userId: string
+  bankName: string
+  accountNumber: string
+  monoAccountId: string
+  balance: number
+  currency: string
+  institution: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/** GET /banking/linked-accounts response */
+export type LinkedAccountsApiResponse = TypeApiResponse<LinkedAccount[]>
+
+/** POST /banking/link payload */
+export interface LinkBankPayload {
+  monoCode: string
+}
+
+/** POST /banking/link response */
+export type LinkBankApiResponse = TypeApiResponse<LinkedAccount>
+
+/** DELETE /banking/linked-accounts/:id response */
+export type UnlinkBankApiResponse = TypeApiResponse<{ success: boolean }>
+
+/** GET /banking/liquidity - account in liquidity response */
+export interface LiquidityAccount {
+  id: string
+  bankName: string
+  accountNumber: string
+  balance: number
+  currency: string
+  logo: string | null
+}
+
+/** GET /banking/liquidity - data shape */
+export interface LiquidityData {
+  totalBalance: number
+  currency: string
+  accounts: LiquidityAccount[]
+  isLiveSynced: boolean
+}
+
+/** GET /banking/liquidity?sync=true response */
+export type LiquidityApiResponse = TypeApiResponse<LiquidityData>
+
+export interface OnboardingCompleteResponseData {
+  profile: OnboardingProfile
+  linkedAccounts: LinkedAccount[]
+}
+
+/** POST /onboarding/complete response */
+export interface OnboardingCompleteResponse {
+  success: boolean
+  data: OnboardingCompleteResponseData
+  message: string
+}
+
+/** GET /transactions - category on each transaction */
+export interface TransactionCategory {
+  id: string
+  name: string
+  color: string
+  icon: string
+  type: string | null
+}
+
+/** GET /transactions - account on each transaction */
+export interface TransactionAccount {
+  bankName: string
+  accountNumber: string
+}
+
+/** GET /transactions - single transaction */
+export interface Transaction {
+  id: string
+  amount: number
+  currency: string
+  type: "OUTFLOW" | "INFLOW"
+  narration: string
+  date: string
+  reference: string
+  category: TransactionCategory
+  /** Account (bank name + masked number) when available */
+  account?: TransactionAccount
+  /** @deprecated Prefer account.bankName */
+  bankName?: string
+  /** Transaction status when available (e.g. "COMPLETED") */
+  status?: string
+}
+
+/** GET /transactions - data shape */
+export interface TransactionsData {
+  transactions: Transaction[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+/** GET /transactions response */
+export type TransactionsApiResponse = TypeApiResponse<TransactionsData>
+
+/** GET /transactions query params */
+export interface TransactionsQueryParams {
+  limit: number
+  page: number
+  type?: "debit" | "credit"
+  search?: string
+  accountId?: string
+  categoryId?: string
+  /** ISO date YYYY-MM-DD; when set with endDate, filters transactions by date range */
+  startDate?: string
+  /** ISO date YYYY-MM-DD; when set with startDate, filters transactions by date range */
+  endDate?: string
+  /** Sort order: desc (newest first) or asc (oldest first). Default desc. */
+  orderBy?: "asc" | "desc"
+}
+
+/** GET /transactions/summary - inflow/outflow entry */
+export interface TransactionSummaryFlow {
+  label: string
+  amount: number
+  displayAmount: string
+  statusColor: string
+}
+
+/** GET /transactions/summary - meta */
+export interface TransactionSummaryMeta {
+  month: number
+  year: number
+  currency: string
+}
+
+/** GET /transactions/summary - data shape */
+export interface TransactionSummaryData {
+  inflow: TransactionSummaryFlow
+  outflow: TransactionSummaryFlow
+  meta: TransactionSummaryMeta
+}
+
+/** GET /transactions/summary response */
+export type TransactionSummaryApiResponse =
+  TypeApiResponse<TransactionSummaryData>
+
+/** GET /categories/spending-insights - UI hints per category */
+export interface SpendingInsightItemUi {
+  backgroundColor: string
+  icon: string
+  statusColor: string
+}
+
+/** GET /categories/spending-insights - single category insight */
+export interface SpendingInsightItem {
+  label: string
+  amount: number
+  percentage: number
+  trend: number
+  isIncrease: boolean
+  ui: SpendingInsightItemUi
+}
+
+/** GET /categories/spending-insights - meta */
+export interface SpendingInsightsMeta {
+  month: number
+  year: number
+}
+
+/** GET /categories/spending-insights response */
+export interface SpendingInsightsApiResponse {
+  success: boolean
+  data: SpendingInsightItem[]
+  meta: SpendingInsightsMeta
+}
+
+/** GET /leaks - UI hints per leak */
+export interface LeakItemUi {
+  statusColor: string
+  icon: string
+}
+
+/** GET /leaks - single leak item */
+export interface LeakItem {
+  id: string
+  label: string
+  description: string
+  amount: number
+  date: string
+  type: "VULNERABILITY" | "BANK_CHARGE" | "WATCHLIST"
+  ui: LeakItemUi
+}
+
+/** GET /leaks - pagination in meta */
+export interface LeaksPagination {
+  limit: number
+  skip: number
+  hasMore: boolean
+  total: number
+}
+
+/** GET /leaks - meta */
+export interface LeaksMeta {
+  totalLeaked: number
+  vulnerabilitiesCount: number
+  month: number
+  year: number
+  pagination: LeaksPagination
+}
+
+/** GET /leaks response */
+export interface LeaksApiResponse {
+  success: boolean
+  data: LeakItem[]
+  meta: LeaksMeta
+}
+
+/** GET /governance/summary - cycle */
+export interface GovernanceSummaryCycle {
+  start: string
+  end: string
+  label: string
+}
+
+/** GET /governance/summary - metrics */
+export interface GovernanceSummaryMetrics {
+  totalInflow: number
+  totalSpent: number
+  allocatedAmount: number
+  safeToSpend: number
+}
+
+/** GET /governance/summary - single allocation */
+export interface GovernanceAllocationItem {
+  key: string
+  label: string
+  description: string
+  targetPercentage: number
+  targetAmount: number
+  actualAmount: number
+  actualPercentage: number
+}
+
+/** GET /governance/summary - data shape */
+export interface GovernanceSummaryData {
+  cycle: GovernanceSummaryCycle
+  metrics: GovernanceSummaryMetrics
+  allocations: GovernanceAllocationItem[]
+}
+
+/** GET /governance/summary response */
+export type GovernanceSummaryApiResponse =
+  TypeApiResponse<GovernanceSummaryData>
+
+/** POST /governance/allocations payload */
+export interface GovernanceAllocationsPayload {
+  essentials: number
+  discretionary: number
+  savings: number
+}
+
+/** GET /intelligence/credit-score - single factor */
+export interface CreditScoreFactor {
+  score: number
+  weight: number
+  label: string
+}
+
+/** GET /intelligence/credit-score - factors object */
+export interface CreditScoreFactors {
+  spendingBehavior: CreditScoreFactor
+  cashflowHealth: CreditScoreFactor
+  debtExposure: CreditScoreFactor
+}
+
+/** GET /intelligence/credit-score - financial summary */
+export interface CreditScoreFinancialSummary {
+  monthlyInflow: number
+  monthlyOutflow: number
+  currentDebt: number
+}
+
+/** GET /intelligence/credit-score - data shape */
+export interface CreditScoreData {
+  userId: string
+  generatedAt: string
+  score: number
+  rating: string
+  factors: CreditScoreFactors
+  financialSummary: CreditScoreFinancialSummary
+}
+
+/** GET /intelligence/credit-score response */
+export type CreditScoreApiResponse = TypeApiResponse<CreditScoreData>

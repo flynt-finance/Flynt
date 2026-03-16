@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { GlobalLoaderProvider } from "@/contexts/GlobalLoaderContext";
 import { DebtProvider } from "@/contexts/DebtContext";
 import ThemeAwareToaster from "@/components/ThemeAwareToaster";
 
@@ -25,8 +26,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 		<QueryClientProvider client={queryClient}>
 			<GoogleOAuthProvider clientId={googleClientId}>
 				<ThemeProvider>
-					<DebtProvider>{children}</DebtProvider>
-					<ThemeAwareToaster />
+					<GlobalLoaderProvider>
+						<DebtProvider>{children}</DebtProvider>
+						<ThemeAwareToaster />
+					</GlobalLoaderProvider>
 				</ThemeProvider>
 			</GoogleOAuthProvider>
 		</QueryClientProvider>
