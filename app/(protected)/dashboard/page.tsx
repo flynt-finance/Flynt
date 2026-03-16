@@ -18,6 +18,7 @@ import {
   LinkedAccountsCard,
   UnlinkAccountModal,
   DebtDecisionCard,
+  VirtualCard,
   type LinkedAccount,
 } from "@/components/dashboard";
 import { useDebts } from "@/contexts/DebtContext";
@@ -380,8 +381,7 @@ export default function DashboardPage() {
 
         {/* Right Column - Cards & Insights */}
         <div className="space-y-6">
-          {/* Virtual Card */}
-          {/* <VirtualCard
+          <VirtualCard
             cards={[
               {
                 id: "1",
@@ -449,7 +449,7 @@ export default function DashboardPage() {
                 colorScheme: "blue",
               },
             ]}
-          /> */}
+          />
 
           {/* AI Insights */}
 
