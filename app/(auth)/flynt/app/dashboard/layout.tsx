@@ -6,8 +6,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SyncAnimation from "../../components/SyncAnimation"; // Import the SyncAnimation component
 import useSync from "../../hooks/useSync";
 
-
-
 export default function DashboardLayout({
   children,
 }: {
@@ -15,7 +13,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isSyncing } = useSync(); // Use the custom hook to get syncing state
+  const { isSyncing } = useSync();
 
   const handleLogout = () => {
     router.push("/login");
@@ -30,7 +28,7 @@ export default function DashboardLayout({
     },
     { href: "/dashboard/budget", label: "Budget", icon: "budget" },
     { href: "/dashboard/debts", label: "Debts", icon: "debts" },
-    // { href: "/dashboard/cards", label: "Cards", icon: "cards" },
+    { href: "/dashboard/cards", label: "Cards", icon: "cards" },
     { href: "/dashboard/insights", label: "Insights", icon: "insights" },
   ];
 
@@ -132,7 +130,8 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <main className="p-6">
-          {isSyncing && <SyncAnimation />} {/* Show syncing animation if syncing */}
+          {isSyncing && <SyncAnimation />}{" "}
+          {/* Show syncing animation if syncing */}
           {children}
         </main>
       </div>

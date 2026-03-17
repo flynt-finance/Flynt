@@ -8,6 +8,7 @@ import Connect from "@mono.co/connect.js";
 import InvestmentInsightsModal from "@/components/InvestmentInsightsModal";
 import { Card } from "@/components/ui";
 import { ConnectBankSecureModal, ConfirmModal } from "@/components/modal";
+import VirtualCard from "@/components/dashboard/VirtualCard";
 import {
   CategoryCard,
   TransactionItem,
@@ -526,8 +527,8 @@ export default function DashboardPage() {
 
         {/* Right Column - Cards & Insights */}
         <div className="space-y-6">
-          {/* Virtual Card */}
-          {/* <VirtualCard
+          Virtual Card
+          <VirtualCard
             cards={[
               {
                 id: "1",
@@ -596,12 +597,9 @@ export default function DashboardPage() {
               },
             ]}
           />
-
-					{/* AI Insights */}
-
+          {/* AI Insights */}
           {/* Financial leakages */}
           <FinancialLeaksSystem />
-
           {/* Linked Accounts */}
           {isLinkedAccountsLoading ? (
             <Card className="p-5">
