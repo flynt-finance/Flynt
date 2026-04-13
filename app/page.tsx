@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-md border-b border-border-subtle">
+      <header className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-md border-b border-border-subtle max-w-6xl mx-auto">
         <div className="container px-4 py-6 mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-4">
             <HeaderLogo width={120} height={40} />
@@ -38,7 +38,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="container mx-auto px-4">
+      <main className="max-w-6xl mx-auto">
         <Hero />
 
         {/* How it works */}
