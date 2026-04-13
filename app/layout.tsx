@@ -17,15 +17,17 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Flynt - Spend Smarter, Save Faster",
+  title: "Flynt - Real-Time Transaction Intelligence",
   description:
-    "AI-powered financial control that prevents overspending before it happens",
+    "Flynt gives financial institutions real-time fraud detection and transaction monitoring — catching anomalies and blocking threats before they escalate.",
   keywords: [
-    "fintech",
-    "budgeting",
-    "virtual cards",
-    "spending control",
-    "Nigeria",
+    "fraud detection",
+    "transaction monitoring",
+    "financial intelligence",
+    "real-time fraud prevention",
+    "fintech Nigeria",
+    "AML compliance",
+    "anomaly detection",
   ],
   authors: [{ name: "Flynt Finance" }],
   icons: {
@@ -33,9 +35,9 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
   },
   openGraph: {
-    title: "Flynt - Spend Smarter, Save Faster",
+    title: "Flynt - Real-Time Transaction Intelligence",
     description:
-      "AI-powered financial control that prevents overspending before it happens",
+      "Flynt gives financial institutions real-time fraud detection and transaction monitoring — catching anomalies and blocking threats before they escalate.",
     type: "website",
   },
 };

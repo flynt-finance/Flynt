@@ -116,12 +116,13 @@ export default function FlyntHero() {
               >
                 Request Demo
               </Link>
-              <Link
+              {/* API Docs button — hidden until docs are ready */}
+              {/* <Link
                 href="/docs"
                 className="border px-6 py-3 rounded-xl font-bold"
               >
                 API Docs
-              </Link>
+              </Link> */}
             </div>
           </div>
 
