@@ -258,7 +258,7 @@ export default function RegisterPage() {
 					Create a new account
 				</h1>
 				<p className="mt-1 text-sm text-text-secondary">
-					Start your journey to financial freedom today
+					Set up your Flynt fraud detection account
 				</p>
 			</div>
 

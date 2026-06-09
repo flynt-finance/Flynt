@@ -9,26 +9,26 @@ import { z } from "zod";
 // ─── Option lists ─────────────────────────────────────────────────────────────
 
 const primaryGoals = [
-  { value: "save_more", label: "Save more consistently" },
-  { value: "invest", label: "Start or grow investments" },
-  { value: "manage_debt", label: "Manage & eliminate debt" },
-  { value: "track_spending", label: "Track & reduce spending" },
-  { value: "passive_income", label: "Build passive income" },
+  { value: "fraud_prevention", label: "Prevent payment fraud" },
+  { value: "transaction_monitoring", label: "Monitor transactions in real time" },
+  { value: "chargeback_reduction", label: "Reduce chargebacks & losses" },
+  { value: "compliance", label: "Meet compliance requirements" },
+  { value: "automation", label: "Automate fraud review workflows" },
 ];
 
 const savingMethods = [
-  { value: "bank_savings", label: "Bank savings account" },
-  { value: "piggy_bank", label: "Piggybank / Cowrywise" },
-  { value: "stocks_etf", label: "Stocks / ETFs" },
-  { value: "real_estate", label: "Real estate" },
-  { value: "nothing", label: "Nothing yet" },
+  { value: "bank", label: "Bank or neobank" },
+  { value: "fintech", label: "Fintech / wallet app" },
+  { value: "payment_processor", label: "Payment processor" },
+  { value: "ecommerce", label: "E-commerce platform" },
+  { value: "other", label: "Other financial services" },
 ];
 
 const savingsRanges = [
-  { value: "0_10k", label: "₦0 – ₦10,000" },
-  { value: "10k_50k", label: "₦10,000 – ₦50,000" },
-  { value: "50k_200k", label: "₦50,000 – ₦200,000" },
-  { value: "200k_plus", label: "₦200,000+" },
+  { value: "0_10k", label: "Under 10,000 / month" },
+  { value: "10k_50k", label: "10,000 – 50,000 / month" },
+  { value: "50k_200k", label: "50,000 – 200,000 / month" },
+  { value: "200k_plus", label: "200,000+ / month" },
 ];
 
 const hearOptions = [
@@ -239,24 +239,25 @@ export default function TrustStats() {
                   </div>
 
                   <h2 className="text-4xl font-medium tracking-tight text-text-secondary dark:text-white md:text-5xl leading-tight">
-                    Join the{" "}
+                    Ready to protect{" "}
                     <span className="text-emerald-400 font-serif italic">
-                      Flynt Waitlist.
+                      your business?
                     </span>
                   </h2>
 
                   <p className="mt-6 text-slate-400 text-sm leading-relaxed max-w-sm">
-                    Stop managing accounts. Start governing your capital. Beta
-                    access is limited — join the waitlist to secure your spot.
+                    Join the waitlist for early access to the Flynt fraud
+                    detection API. We&apos;ll reach out to schedule a demo and
+                    help you get started.
                   </p>
                 </div>
 
                 {/* Trust signals */}
                 <div className="mt-10 flex flex-col gap-3">
                   {[
-                    "No credit card required",
-                    "End-to-end encrypted · Non-custodial",
-                    "Early access perks for waitlist members",
+                    "Free demo — no commitment required",
+                    "Bank-grade encryption & security",
+                    "Priority onboarding for early partners",
                   ].map((point) => (
                     <div key={point} className="flex items-center gap-2.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
@@ -378,7 +379,7 @@ export default function TrustStats() {
                           >
                             <SelectField
                               id="primaryGoal"
-                              label="Primary financial goal"
+                              label="What do you need Flynt for?"
                               options={primaryGoals}
                               value={form.primaryGoal}
                               onChange={set("primaryGoal")}
@@ -386,7 +387,7 @@ export default function TrustStats() {
                             />
                             <SelectField
                               id="currentSavingMethods"
-                              label="Current saving / investment method"
+                              label="Your industry"
                               options={savingMethods}
                               value={form.currentSavingMethods}
                               onChange={set("currentSavingMethods")}
@@ -394,7 +395,7 @@ export default function TrustStats() {
                             />
                             <SelectField
                               id="monthlySavingsRange"
-                              label="Monthly savings range"
+                              label="Monthly transaction volume"
                               options={savingsRanges}
                               value={form.monthlySavingsRange}
                               onChange={set("monthlySavingsRange")}

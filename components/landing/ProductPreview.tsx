@@ -1,61 +1,52 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard,
-  CreditCard,
-  Cpu,
-  Activity,
-  Zap,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
   ShieldCheck,
-  Lock,
+  AlertTriangle,
+  Ban,
   CheckCircle2,
-  AlertCircle,
+  Activity,
+  Plug,
 } from "lucide-react";
-
-// ─── Data ────────────────────────────────────────────────────────────────────
 
 const activityFeed = [
   {
     id: 1,
-    type: "action",
-    label: "DSTV subscription paused",
-    detail: "₦8,500 → Palantir (PLTR)",
+    type: "block",
+    label: "Fraud blocked",
+    detail: "₦450,000 transfer — unusual location",
     time: "2m ago",
-    icon: <Zap className="w-3 h-3" />,
-    color: "emerald",
+    icon: <Ban className="w-3 h-3" />,
+    color: "red",
   },
   {
     id: 2,
-    type: "alert",
-    label: "Spend limit triggered",
-    detail: "Transport budget 92% used",
-    time: "14m ago",
-    icon: <AlertCircle className="w-3 h-3" />,
+    type: "flag",
+    label: "Flagged for review",
+    detail: "₦85,000 POS — new device detected",
+    time: "8m ago",
+    icon: <AlertTriangle className="w-3 h-3" />,
     color: "amber",
   },
   {
     id: 3,
-    type: "sync",
-    label: "Zenith Bank synced",
-    detail: "Balance updated — ₦1,204,100",
-    time: "1h ago",
+    type: "approve",
+    label: "Transaction approved",
+    detail: "₦12,500 transfer — low risk (14%)",
+    time: "12m ago",
     icon: <CheckCircle2 className="w-3 h-3" />,
-    color: "blue",
+    color: "emerald",
   },
   {
     id: 4,
-    type: "insight",
-    label: "Cash flow forecast ready",
-    detail: "Projected surplus: ₦42,000",
-    time: "3h ago",
-    icon: <TrendingUp className="w-3 h-3" />,
-    color: "indigo",
+    type: "sync",
+    label: "API health check",
+    detail: "All endpoints responding — 12ms avg",
+    time: "1h ago",
+    icon: <Activity className="w-3 h-3" />,
+    color: "blue",
   },
 ];
 
@@ -63,35 +54,20 @@ const colorMap: Record<string, string> = {
   emerald: "text-emerald-500 bg-emerald-500/10",
   amber: "text-amber-500 bg-amber-500/10",
   blue: "text-blue-500 bg-blue-500/10",
-  indigo: "text-indigo-500 bg-indigo-500/10",
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.09 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  red: "text-red-500 bg-red-500/10",
 };
 
 export default function ProductPreview() {
   return (
     <section className="relative bg-bg-primary dark:bg-[#0A0D27] py-24 lg:py-32 overflow-hidden">
-      {/* Top divider */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/10 to-transparent" />
 
-      {/* Subtle background glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
       <div className="container mx-auto max-w-7xl px-1 relative z-10">
-        {/* ── SECTION HEADER ─────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -103,25 +79,24 @@ export default function ProductPreview() {
             <div className="flex items-center gap-2 mb-4">
               <span className="h-px w-8 bg-emerald-500" />
               <h2 className="text-[10px] font-bold uppercase tracking-[0.4em] text-emerald-500">
-                Live OS Preview
+                See It In Action
               </h2>
             </div>
             <h3 className="text-4xl font-medium tracking-tight text-text-secondary dark:text-white md:text-5xl">
-              Fragmented data, <br />
+              Your fraud dashboard,{" "}
               <span className="text-slate-400 font-light italic">
-                unified intelligence.
+                powered by Flynt.
               </span>
             </h3>
           </div>
 
           <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-md lg:text-right">
-            Flynt aggregates every account you own into a single operating layer
-            — then acts on the insights automatically, so you never have to
-            switch between apps again.
+            Once Flynt is connected, your team gets a clear view of every
+            transaction — what was approved, what was flagged, and what was
+            stopped before it caused damage.
           </p>
         </motion.div>
 
-        {/* ── DASHBOARD MOCKUP PANEL ─────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -129,7 +104,6 @@ export default function ProductPreview() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="relative rounded-2xl border border-slate-200 dark:border-white/10 bg-bg-secondary dark:bg-[#0D1131]/60 overflow-hidden"
         >
-          {/* Panel top bar */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-white/5 bg-slate-50/80 dark:bg-white/[0.02]">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
@@ -138,55 +112,53 @@ export default function ProductPreview() {
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
               </div>
               <span className="ml-2 text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">
-                flynt://dashboard/overview
+                flynt://fraud-monitor
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <Plug className="w-3 h-3 text-emerald-500" />
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[9px] font-mono font-bold text-emerald-500 uppercase tracking-widest">
-                Live
+                API Connected
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-white/5">
-            {/* Left: summary stats */}
+            {/* Left: fraud stats */}
             <div className="p-8 space-y-6">
               <div>
                 <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 mb-1">
-                  Net Worth
+                  Transactions Today
                 </p>
                 <p className="text-3xl font-mono font-bold text-text-secondary dark:text-white">
-                  ₦8,204,100
+                  24,891
                 </p>
-                <div className="flex items-center gap-1 mt-1">
-                  <ArrowUpRight className="w-3 h-3 text-emerald-500" />
-                  <span className="text-[10px] font-mono text-emerald-500">
-                    +₦142,000 this month
-                  </span>
-                </div>
+                <p className="text-[10px] font-mono text-slate-400 mt-1">
+                  Scanned by Flynt API
+                </p>
               </div>
 
               <div className="space-y-3">
                 {[
-                  { bank: "Zenith Bank", amount: "₦4,204,100", pct: 51 },
-                  { bank: "Access Bank", amount: "₦2,812,000", pct: 34 },
-                  { bank: "UBA", amount: "₦1,188,000", pct: 15 },
-                ].map((b) => (
-                  <div key={b.bank}>
+                  { label: "Approved", count: "24,712", pct: 99.3, color: "bg-emerald-500" },
+                  { label: "Flagged", count: "156", pct: 0.6, color: "bg-amber-500" },
+                  { label: "Blocked", count: "23", pct: 0.1, color: "bg-red-500" },
+                ].map((s) => (
+                  <div key={s.label}>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                        {b.bank}
+                        {s.label}
                       </span>
                       <span className="text-[11px] font-mono font-bold text-text-secondary dark:text-white">
-                        {b.amount}
+                        {s.count}
                       </span>
                     </div>
                     <div className="h-1 w-full rounded-full bg-slate-100 dark:bg-white/5">
                       <motion.div
-                        className="h-1 rounded-full bg-emerald-500"
+                        className={`h-1 rounded-full ${s.color}`}
                         initial={{ width: 0 }}
-                        whileInView={{ width: `${b.pct}%` }}
+                        whileInView={{ width: `${s.pct}%` }}
                         viewport={{ once: true }}
                         transition={{ duration: 1, delay: 0.4 }}
                       />
@@ -198,79 +170,75 @@ export default function ProductPreview() {
               <div className="pt-4 border-t border-slate-100 dark:border-white/5 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
-                    Income
+                    Fraud Prevented
                   </p>
-                  <p className="text-base font-mono font-bold text-text-secondary dark:text-white mt-0.5">
-                    ₦620k
+                  <p className="text-base font-mono font-bold text-emerald-500 mt-0.5">
+                    ₦4.2M
                   </p>
                 </div>
                 <div>
                   <p className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
-                    Expenses
+                    Avg Response
                   </p>
                   <p className="text-base font-mono font-bold text-text-secondary dark:text-white mt-0.5">
-                    ₦478k
+                    12ms
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Center: AI insight card */}
+            {/* Center: latest alert */}
             <div className="p-8 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-6">
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-amber-500">
-                    Neural Suggestion
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-red-500">
+                    Latest Alert
                   </span>
-                  <div className="h-px flex-1 bg-amber-500/20" />
+                  <div className="h-px flex-1 bg-red-500/20" />
                 </div>
 
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
+                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5 space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="p-1.5 rounded bg-amber-500/10 text-amber-500 mt-0.5">
-                      <Cpu className="w-3.5 h-3.5" />
+                    <div className="p-1.5 rounded bg-red-500/10 text-red-500 mt-0.5">
+                      <Ban className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-text-secondary dark:text-white">
-                        Pause DSTV subscription
+                        Transfer blocked — High risk (92%)
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                        You haven't used DSTV in 18 days. Pausing saves
-                        ₦8,500/month — redirect to Palantir (PLTR) for compound
-                        growth.
+                        ₦450,000 sent from Lagos to an account in a high-risk
+                        region. Amount is 8× the user&apos;s average. Device
+                        fingerprint mismatch detected.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="flex-1 rounded-sm bg-emerald-500 px-3 py-2 text-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                        Apply Action
-                      </span>
-                    </div>
-                    <div className="rounded-sm border border-slate-200 dark:border-white/10 px-3 py-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                        Dismiss
-                      </span>
-                    </div>
+                  <div className="rounded-lg bg-bg-primary dark:bg-white/5 p-3">
+                    <p className="text-[9px] font-mono uppercase tracking-widest text-slate-400 mb-1">
+                      Why Flynt blocked this
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Unusual amount + new recipient + location mismatch =
+                      92% fraud probability. Customer notified automatically.
+                    </p>
                   </div>
                 </div>
 
-                {/* Fiscal health bar */}
                 <div className="mt-6">
                   <div className="flex justify-between mb-2">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">
-                      Fiscal Health Score
+                      Protection Score
                     </span>
                     <span className="text-[10px] font-mono font-bold text-emerald-500">
-                      A+ / 94.2
+                      99.7% effective
                     </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-white/5">
                     <motion.div
                       className="h-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500"
                       initial={{ width: 0 }}
-                      whileInView={{ width: "94%" }}
+                      whileInView={{ width: "99.7%" }}
                       viewport={{ once: true }}
                       transition={{ duration: 1.2, delay: 0.5 }}
                     />
@@ -280,15 +248,15 @@ export default function ProductPreview() {
 
               <div className="mt-6 flex items-center gap-2 text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">
                 <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                <span>Non-custodial · End-to-end encrypted</span>
+                <span>Encrypted · SOC 2 ready · Audit trail enabled</span>
               </div>
             </div>
 
-            {/* Right: Live activity feed */}
+            {/* Right: activity feed */}
             <div className="p-8">
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-slate-400">
-                  Activity Feed
+                  Live Activity
                 </span>
                 <div className="h-px flex-1 bg-slate-100 dark:bg-white/5" />
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />

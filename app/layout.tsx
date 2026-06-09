@@ -17,27 +17,28 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Flynt - Real-Time Transaction Intelligence",
+  title: "Flynt — Fraud Detection API",
   description:
-    "Flynt gives financial institutions real-time fraud detection and transaction monitoring — catching anomalies and blocking threats before they escalate.",
+    "Flynt is a fraud detection API you plug into your system. It watches every transaction, spots suspicious activity, and takes action automatically — giving your business clarity, intelligence, and automation.",
   keywords: [
-    "fraud detection",
+    "fraud detection API",
     "transaction monitoring",
-    "financial intelligence",
-    "real-time fraud prevention",
-    "fintech Nigeria",
-    "AML compliance",
-    "anomaly detection",
+    "fraud prevention",
+    "real-time fraud detection",
+    "payment fraud",
+    "fintech API",
+    "risk scoring",
+    "automated fraud prevention",
   ],
-  authors: [{ name: "Flynt Finance" }],
+  authors: [{ name: "Flynt" }],
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
   },
   openGraph: {
-    title: "Flynt - Real-Time Transaction Intelligence",
+    title: "Flynt — Fraud Detection API",
     description:
-      "Flynt gives financial institutions real-time fraud detection and transaction monitoring — catching anomalies and blocking threats before they escalate.",
+      "Plug Flynt into your system for real-time fraud detection. Clarity, intelligence, and automation — through a single API.",
     type: "website",
   },
 };

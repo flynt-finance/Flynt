@@ -15,27 +15,26 @@ import type { SelectOption } from "@/components/ui";
 import WaitlistSuccessModal from "@/components/WaitlistSuccessModal";
 
 const PRIMARY_GOAL_OPTIONS: SelectOption[] = [
-	{ value: "save_emergency", label: "Save for emergency" },
-	{ value: "invest_growth", label: "Invest for growth" },
-	{ value: "pay_debt", label: "Pay off debt" },
-	{ value: "budget_better", label: "Budget better" },
-	{ value: "other", label: "Other" },
+	{ value: "fraud_prevention", label: "Prevent payment fraud" },
+	{ value: "transaction_monitoring", label: "Monitor transactions in real time" },
+	{ value: "chargeback_reduction", label: "Reduce chargebacks & losses" },
+	{ value: "compliance", label: "Meet compliance requirements" },
+	{ value: "automation", label: "Automate fraud review workflows" },
 ];
 
 const SAVING_METHODS_OPTIONS: SelectOption[] = [
-	{ value: "bank_savings", label: "Bank savings" },
-	{ value: "stocks", label: "Stocks" },
-	{ value: "mutual_funds", label: "Mutual funds" },
-	{ value: "crypto", label: "Crypto" },
-	{ value: "none", label: "None" },
-	{ value: "other", label: "Other" },
+	{ value: "bank", label: "Bank or neobank" },
+	{ value: "fintech", label: "Fintech / wallet app" },
+	{ value: "payment_processor", label: "Payment processor" },
+	{ value: "ecommerce", label: "E-commerce platform" },
+	{ value: "other", label: "Other financial services" },
 ];
 
 const MONTHLY_RANGE_OPTIONS: SelectOption[] = [
-	{ value: "under_50k", label: "Under ₦50k" },
-	{ value: "50k_200k", label: "₦50k–₦200k" },
-	{ value: "200k_500k", label: "₦200k–₦500k" },
-	{ value: "above_500k", label: "Above ₦500k" },
+	{ value: "under_50k", label: "Under 10,000 transactions / month" },
+	{ value: "50k_200k", label: "10,000 – 50,000 / month" },
+	{ value: "200k_500k", label: "50,000 – 200,000 / month" },
+	{ value: "above_500k", label: "200,000+ / month" },
 ];
 
 const HEAR_ABOUT_OPTIONS: SelectOption[] = [
@@ -157,10 +156,11 @@ export default function WaitlistPage() {
 			<main className="container mx-auto px-4 py-10 max-w-2xl">
 				<div className="mb-8 text-center">
 					<h1 className="text-2xl font-bold text-text-primary">
-						Join the Flynt waitlist
+						Request a Flynt demo
 					</h1>
 					<p className="mt-2 text-sm text-text-secondary">
-						Tell us a bit about yourself and your goals.
+						Tell us about your business and we&apos;ll show you how the fraud
+						detection API works.
 					</p>
 				</div>
 
@@ -203,34 +203,34 @@ export default function WaitlistPage() {
 						/>
 						<Select
 							id="waitlist-primaryGoal"
-							label="Primary goal"
+							label="What do you need Flynt for?"
 							options={PRIMARY_GOAL_OPTIONS}
 							value={formValues.primaryGoal}
 							onChange={(v) => updateField("primaryGoal", v)}
 							error={errors.primaryGoal}
-							placeholder="Select your primary goal"
+							placeholder="Select your use case"
 							required
 							aria-required="true"
 						/>
 						<Select
 							id="waitlist-currentSavingMethods"
-							label="Current saving / investment methods"
+							label="Your industry"
 							options={SAVING_METHODS_OPTIONS}
 							value={formValues.currentSavingMethods}
 							onChange={(v) => updateField("currentSavingMethods", v)}
 							error={errors.currentSavingMethods}
-							placeholder="Select current methods"
+							placeholder="Select your industry"
 							required
 							aria-required="true"
 						/>
 						<Select
 							id="waitlist-monthlySavingsRange"
-							label="Monthly savings and investment range"
+							label="Monthly transaction volume"
 							options={MONTHLY_RANGE_OPTIONS}
 							value={formValues.monthlySavingsRange}
 							onChange={(v) => updateField("monthlySavingsRange", v)}
 							error={errors.monthlySavingsRange}
-							placeholder="Select monthly range"
+							placeholder="Select transaction volume"
 							required
 							aria-required="true"
 						/>
@@ -253,14 +253,14 @@ export default function WaitlistPage() {
 							disabled={isSubmitting}
 							aria-busy={isSubmitting}
 						>
-							{isSubmitting ? "Submitting…" : "Join waitlist"}
+							{isSubmitting ? "Submitting…" : "Request demo"}
 						</Button>
 					</form>
 				</Card>
 			</main>
 
 			<footer className="container mx-auto px-4 py-8 text-center text-text-muted">
-				<p>© 2026 Flynt Finance.</p>
+				<p>© 2026 Flynt. Fraud detection API for modern businesses.</p>
 			</footer>
 
 			<WaitlistSuccessModal

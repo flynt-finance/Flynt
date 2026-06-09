@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, ShieldCheck } from "lucide-react";
+import { BarChart3, ShieldCheck, Plug } from "lucide-react";
 
 type RiskLevel = "low" | "medium" | "high";
 
@@ -27,7 +27,7 @@ const RISK_CONFIG = {
   low: {
     label: "LOW RISK",
     riskScore: "18%",
-    statusLabel: "Clean",
+    statusLabel: "Approved",
     cardBorder: "border-gray-500/30 bg-gray-500/10 text-gray-400",
     panelBorder: "border-gray-500/30",
     badgeText: "text-gray-400",
@@ -99,30 +99,34 @@ export default function FlyntHero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:items-start">
           {/* LEFT */}
           <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">
+              <Plug className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-xs font-medium text-emerald-500">
+                Fraud Detection API
+              </span>
+            </div>
             <h1 className="mb-6 text-5xl font-medium tracking-tight text-text-primary">
-              Real-Time Intelligence. <br />
+              Stop fraud before{" "}
               <span className="text-text-muted font-light italic">
-                for Better Financial Decisions
+                it costs you money.
               </span>
             </h1>
-            <p className="mb-10 max-w-lg text-lg text-text-secondary">
-              Flynt monitors transactions across accounts, detects anomalies
-              instantly, and takes action before fraud escalates.
+            <p className="mb-4 max-w-lg text-lg text-text-secondary">
+              Flynt is an API you plug into your existing system. It watches
+              every transaction, spots suspicious activity instantly, and takes
+              action automatically — so your team gets clarity, not chaos.
+            </p>
+            <p className="mb-10 max-w-lg text-sm text-text-muted">
+              No new app to build. No complex setup. Just smarter protection
+              running quietly in the background.
             </p>
             <div className="flex gap-4">
               <Link
                 href="/waitlist"
                 className="bg-green-primary px-6 py-3 rounded-xl text-white font-bold"
               >
-                Request Demo
+                Request a Demo
               </Link>
-              {/* API Docs button — hidden until docs are ready */}
-              {/* <Link
-                href="/docs"
-                className="border px-6 py-3 rounded-xl font-bold"
-              >
-                API Docs
-              </Link> */}
             </div>
           </div>
 
@@ -133,7 +137,7 @@ export default function FlyntHero() {
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 bg-green-primary rounded-full animate-pulse" />
                 <span className="text-xs font-mono uppercase">
-                  Fraud Engine
+                  Flynt API — Live
                 </span>
               </div>
               <BarChart3 className="h-4 w-4" />
@@ -143,7 +147,7 @@ export default function FlyntHero() {
               {/* TRANSACTION STREAM */}
               <div>
                 <p className="text-xs mb-2 uppercase text-text-muted">
-                  Live Transactions
+                  Transactions flowing through your system
                 </p>
                 <div className="space-y-2 h-[160px] overflow-hidden">
                   <AnimatePresence initial={false}>
@@ -177,7 +181,7 @@ export default function FlyntHero() {
                   <span
                     className={`font-bold uppercase transition-colors duration-300 ${config.badgeText}`}
                   >
-                    Anomaly Detected
+                    {flagged ? "Suspicious Activity" : "All Clear"}
                   </span>
                   <span
                     className={`font-mono transition-colors duration-300 ${config.badgeText}`}
@@ -186,26 +190,28 @@ export default function FlyntHero() {
                   </span>
                 </div>
                 <p className="text-xs text-text-secondary">
-                  {flagged ? flagged.text : "Scanning transactions..."}
+                  {flagged
+                    ? flagged.text
+                    : "Flynt is scanning every transaction in real time…"}
                 </p>
               </div>
 
               {/* STATS */}
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-bg-elevated rounded">
-                  <p className="text-xs">Risk</p>
+                  <p className="text-xs">Risk Score</p>
                   <p className={`font-bold ${config.scoreBold}`}>
                     {flagged ? config.riskScore : "—"}
                   </p>
                 </div>
                 <div className="p-3 bg-bg-elevated rounded">
-                  <p className="text-xs">Status</p>
+                  <p className="text-xs">Decision</p>
                   <p className={`font-bold ${config.statusBold}`}>
-                    {flagged ? config.statusLabel : "Clean"}
+                    {flagged ? config.statusLabel : "Approved"}
                   </p>
                 </div>
                 <div className="p-3 bg-bg-elevated rounded">
-                  <p className="text-xs">System</p>
+                  <p className="text-xs">API Status</p>
                   <p className="font-bold text-green-primary">Active</p>
                 </div>
               </div>
@@ -225,8 +231,8 @@ export default function FlyntHero() {
                       <ShieldCheck className="h-4 w-4" />
                       <p className="text-xs font-bold">
                         {flagged.risk === "high"
-                          ? "Transaction Blocked"
-                          : "Transaction Flagged for Review"}
+                          ? "Fraud Blocked — Your customer is protected"
+                          : "Flagged for Review — Sent to your team"}
                       </p>
                     </motion.div>
                   )}

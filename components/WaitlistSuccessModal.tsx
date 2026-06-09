@@ -26,8 +26,8 @@ export default function WaitlistSuccessModal({
 		<Modal
 			open={open}
 			onClose={onClose}
-			title="You're on the list!"
-			ariaLabel="Waitlist signup success"
+			title="Demo request received!"
+			ariaLabel="Demo request success"
 			contentClassName="max-w-[400px]"
 			footer={
 				<Button
@@ -49,7 +49,8 @@ export default function WaitlistSuccessModal({
 					aria-hidden
 				/>
 				<p className="text-text-primary text-base">
-					Thanks for joining. We&apos;ll be in touch!
+					Thanks for your interest. Our team will reach out shortly to schedule
+					your demo.
 				</p>
 			</div>
 		</Modal>

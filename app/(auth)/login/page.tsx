@@ -267,10 +267,10 @@ export default function LoginPage() {
 		<div className="w-full max-w-md mx-auto">
 			<div className="mb-6 flex flex-col items-center text-center">
 				<h1 className="text-xl font-medium text-text-primary">
-					Welcome back to FLYNT
+					Sign in to Flynt
 				</h1>
 				<p className="mt-1 text-sm text-text-secondary">
-					Continue your journey to financial freedom today
+					Access your fraud detection dashboard
 				</p>
 			</div>
 

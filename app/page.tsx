@@ -6,6 +6,7 @@ import { HeaderLogo } from "@/components/HeaderLogo";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import CoreCapabilities from "@/components/landing/CoreCapabilities";
+import WhoItsFor from "@/components/landing/WhoItsFor";
 import Transparency from "@/components/landing/Transparency";
 import ProductPreview from "@/components/landing/ProductPreview";
 import TrustStats from "@/components/landing/TrustStats";
@@ -25,7 +26,7 @@ export default function Home() {
               href="/waitlist"
               className="rounded-lg border border-border-primary bg-transparent px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-green-primary/10"
             >
-              Join waitlist
+              Request Demo
             </Link>
             {/* <Link
 							href="/waitlist"
@@ -47,6 +48,9 @@ export default function Home() {
         {/* Core capabilities */}
         <CoreCapabilities />
 
+        {/* Who it's for */}
+        <WhoItsFor />
+
         {/* Transparency */}
         <Transparency />
 
@@ -59,7 +63,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 text-center text-text-muted">
-        <p>© 2026 Flynt Finance.</p>
+        <p>© 2026 Flynt. Fraud detection API for modern businesses.</p>
       </footer>
     </div>
   );
